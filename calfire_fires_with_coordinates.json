@@ -1,0 +1,57 @@
+[
+  {
+    "name": "Gifford Fire",
+    "counties": "San Luis Obispo, Santa Barbara",
+    "started": "8/01/2025",
+    "acres_burned": "23,589",
+    "containment": "5%",
+    "detail_url": "https://www.fire.ca.gov/incidents/2025/8/1/gifford-fire",
+    "latitude": 35.102947,
+    "longitude": -120.116814,
+    "source": "3d_map_link"
+  },
+  {
+    "name": "Green Fire",
+    "counties": "Shasta",
+    "started": "7/01/2025",
+    "acres_burned": "19,022",
+    "containment": "96%",
+    "detail_url": "https://www.fire.ca.gov/incidents/2025/7/1/green-fire",
+    "latitude": 40.834939,
+    "longitude": -122.094146,
+    "source": "3d_map_link"
+  },
+  {
+    "name": "Medicine Fire",
+    "counties": "Mendocino",
+    "started": "7/27/2025",
+    "acres_burned": "263",
+    "containment": "85%",
+    "detail_url": "https://www.fire.ca.gov/incidents/2025/7/27/medicine-fire",
+    "latitude": 39.831628,
+    "longitude": -123.267618,
+    "source": "3d_map_link"
+  },
+  {
+    "name": "Donovan Fire",
+    "counties": "San Luis Obispo",
+    "started": "8/02/2025",
+    "acres_burned": "30",
+    "containment": "0%",
+    "detail_url": "https://www.fire.ca.gov/incidents/2025/8/2/donovan-fire",
+    "latitude": 35.527328,
+    "longitude": -120.508946,
+    "source": "3d_map_link"
+  },
+  {
+    "name": "4-8 Fire",
+    "counties": "Modoc",
+    "started": "8/01/2025",
+    "acres_burned": "25",
+    "containment": "0%",
+    "detail_url": "https://www.fire.ca.gov/incidents/2025/8/1/4-8-fire",
+    "latitude": 41.319441,
+    "longitude": -120.747715,
+    "source": "3d_map_link"
+  }
+]

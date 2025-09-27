@@ -1,0 +1,110 @@
+[
+  {
+    "name": "Gifford Fire",
+    "counties": "San Luis Obispo, Santa Barbara",
+    "started": "8/01/2025",
+    "acres_burned": "23,589",
+    "containment": "5%",
+    "detail_url": "https://www.fire.ca.gov/incidents/2025/8/1/gifford-fire",
+    "boundary": "and other potential resources"
+  },
+  {
+    "name": "Orleans Complex",
+    "counties": "Del Norte, Siskiyou",
+    "started": "7/09/2025",
+    "acres_burned": "21,489",
+    "containment": "80%",
+    "detail_url": "https://www.fire.ca.gov/incidents/2025/7/9/orleans-complex",
+    "boundary": "and other potential resources"
+  },
+  {
+    "name": "Green Fire",
+    "counties": "Shasta",
+    "started": "7/01/2025",
+    "acres_burned": "19,022",
+    "containment": "96%",
+    "detail_url": "https://www.fire.ca.gov/incidents/2025/7/1/green-fire",
+    "boundary": "and other potential resources"
+  },
+  {
+    "name": "Marble Complex Fire",
+    "counties": "Siskiyou",
+    "started": "7/03/2025",
+    "acres_burned": "747",
+    "containment": "90%",
+    "detail_url": "https://www.fire.ca.gov/incidents/2025/7/3/marble-complex-fire",
+    "boundary": "and other potential resources"
+  },
+  {
+    "name": "Medicine Fire",
+    "counties": "Mendocino",
+    "started": "7/27/2025",
+    "acres_burned": "263",
+    "containment": "85%",
+    "detail_url": "https://www.fire.ca.gov/incidents/2025/7/27/medicine-fire",
+    "boundary": "and other potential resources"
+  },
+  {
+    "name": "1-4 Fire",
+    "counties": "Lassen",
+    "started": "7/31/2025",
+    "acres_burned": "260",
+    "containment": "25%",
+    "detail_url": "https://www.fire.ca.gov/incidents/2025/7/31/1-4-fire",
+    "boundary": "and other potential resources"
+  },
+  {
+    "name": "Howards Fire",
+    "counties": "Modoc",
+    "started": "7/31/2025",
+    "acres_burned": "100",
+    "containment": "45%",
+    "detail_url": "https://www.fire.ca.gov/incidents/2025/7/31/howards-fire",
+    "boundary": "and other potential resources"
+  },
+  {
+    "name": "Lassen Fire",
+    "counties": "Tehama",
+    "started": "8/01/2025",
+    "acres_burned": "51",
+    "containment": "85%",
+    "detail_url": "https://www.fire.ca.gov/incidents/2025/8/1/lassen-fire",
+    "boundary": "and other potential resources"
+  },
+  {
+    "name": "Donovan Fire",
+    "counties": "San Luis Obispo",
+    "started": "8/02/2025",
+    "acres_burned": "30",
+    "containment": "0%",
+    "detail_url": "https://www.fire.ca.gov/incidents/2025/8/2/donovan-fire",
+    "boundary": "and other potential resources"
+  },
+  {
+    "name": "Fremont Fire",
+    "counties": "San Bernardino",
+    "started": "8/02/2025",
+    "acres_burned": "26",
+    "containment": "0%",
+    "detail_url": "https://www.fire.ca.gov/incidents/2025/8/2/fremont-fire",
+    "boundary": "and other potential resources"
+  },
+  {
+    "name": "4-8 Fire",
+    "counties": "Modoc",
+    "started": "8/01/2025",
+    "acres_burned": "25",
+    "containment": "0%",
+    "detail_url": "https://www.fire.ca.gov/incidents/2025/8/1/4-8-fire",
+    "boundary": "and other potential resources"
+  },
+  {
+    "name": "Bernardo Fire",
+    "counties": "San Diego",
+    "started": "8/01/2025",
+    "acres_burned": "13",
+    "containment": "0%",
+    "detail_url": "https://www.fire.ca.gov/incidents/2025/8/1/bernardo-fire",
+    "boundary": "and other potential resources"
+  }
+]

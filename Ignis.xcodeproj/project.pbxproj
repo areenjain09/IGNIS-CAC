@@ -29,9 +29,22 @@
 		BF0CD5A92E2D8D43009415F2 /* IgnisUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = IgnisUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		BF1386742E471444007D120F /* Exceptions for "Ignis" folder in "Ignis" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = BF0CD5912E2D8D42009415F2 /* Ignis */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		BF0CD5942E2D8D42009415F2 /* Ignis */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				BF1386742E471444007D120F /* Exceptions for "Ignis" folder in "Ignis" target */,
+			);
 			path = Ignis;
 			sourceTree = "<group>";
 		};
@@ -400,6 +413,9 @@
 				DEVELOPMENT_TEAM = SB9TJT55MP;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Ignis/Info.plist;
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Ignis needs location access to show nearby wildfires, emergency shelters, and provide accurate fire distance calculations for your safety.";
+				INFOPLIST_KEY_NSLocationAlwaysUsageDescription = "Ignis needs location access to show nearby wildfires, emergency shelters, and provide accurate fire distance calculations for your safety.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -428,6 +444,9 @@
 				DEVELOPMENT_TEAM = SB9TJT55MP;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Ignis/Info.plist;
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Ignis needs location access to show nearby wildfires, emergency shelters, and provide accurate fire distance calculations for your safety.";
+				INFOPLIST_KEY_NSLocationAlwaysUsageDescription = "Ignis needs location access to show nearby wildfires, emergency shelters, and provide accurate fire distance calculations for your safety.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

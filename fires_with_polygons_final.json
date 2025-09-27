@@ -1,0 +1,61 @@
+[
+  {
+    "name": "Gifford Fire",
+    "counties": "San Luis Obispo, Santa Barbara",
+    "started": "8/01/2025",
+    "acres_burned": "23,589",
+    "containment": "5%",
+    "detail_url": "https://www.fire.ca.gov/incidents/2025/8/1/gifford-fire",
+    "latitude": 35.102947,
+    "longitude": -120.116814,
+    "coordinate_source": "3d_map_link",
+    "cause": "Under Investigation",
+    "evacuation_info": "Orders and Warnings",
+    "structures_affected": "within the boundaries have been damaged or destroyed.",
+    "inciweb_coordinates": {
+      "lat": 35.07638888888889,
+      "lon": 120.15916666666668,
+      "format": "degrees_minutes_seconds",
+      "lat_array": [
+        35,
+        4,
+        35
+      ],
+      "lon_array": [
+        120,
+        9,
+        33
+      ]
+    },
+    "polygon_data": {
+      "type": "approximated_polygon",
+      "coordinates": [
+        [
+          120.14916666666667,
+          35.066388888888895
+        ],
+        [
+          120.16916666666668,
+          35.066388888888895
+        ],
+        [
+          120.16916666666668,
+          35.08638888888889
+        ],
+        [
+          120.14916666666667,
+          35.08638888888889
+        ],
+        [
+          120.14916666666667,
+          35.066388888888895
+        ]
+      ],
+      "center": {
+        "lat": 35.07638888888889,
+        "lon": 120.15916666666668
+      },
+      "source": "inciweb_point_approximation"
+    }
+  }
+]

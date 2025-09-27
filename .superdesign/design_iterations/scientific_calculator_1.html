@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scientific Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --secondary: #10b981;
+            --accent: #f59e0b;
+            --dark: #1f2937;
+            --darker: #111827;
+        }
+
+        .calculator {
+            max-width: 400px;
+            margin: 2rem auto;
+        }
+
+        .display {
+            height: 80px;
+            font-size: 2.5rem;
+            background: var(--dark);
+            color: white;
+            text-align: right;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+        }
+
+        .button {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-size: 1.2rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .button:hover {
+            transform: scale(1.05);
+        }
+
+        .button:active {
+            transform: scale(0.95);
+        }
+
+        .primary {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .secondary {
+            background-color: var(--secondary);
+            color: white;
+        }
+
+        .accent {
+            background-color: var(--accent);
+            color: white;
+        }
+
+        .function {
+            background-color: #374151;
+            color: white;
+        }
+
+        .number {
+            background-color: #4b5563;
+            color: white;
+        }
+
+        .clear {
+            background-color: #ef4444;
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 min-h-screen flex items-center">
+    <div class="calculator">
+        <div class="display flex items-center" id="display">0</div>
+        
+        <div class="grid grid-cols-5 gap-2 mt-4">
+            <!-- Scientific Functions -->
+            <button class="button function" onclick="append('sin(')">sin</button>
+            <button class="button function" onclick="append('cos(')">cos</button>
+            <button class="button function" onclick="append('tan(')">tan</button>
+            <button class="button function" onclick="append('log(')">log</button>
+            <button class="button function" onclick="append('ln(')">ln</button>
+            
+            <!-- Scientific Functions 2 -->
+            <button class="button function" onclick="append('√(')">√</button>
+            <button class="button function" onclick="append('^2')">x²</button>
+            <button class="button function" onclick="append('^')">xʸ</button>
+            <button class="button function" onclick="append('(')">(</button>
+            <button class="button function" onclick="append(')')">)</button>
+            
+            <!-- Clear Buttons -->
+            <button class="button clear" onclick="clearDisplay()">C</button>
+            <button class="button function" onclick="backspace()">⌫</button>
+            <button class="button function" onclick="append('%')">%</button>
+            <button class="button primary" onclick="append('/')">÷</button>
+            
+            <!-- Number Row -->
+            <button class="button number" onclick="append('7')">7</button>
+            <button class="button number" onclick="append('8')">8</button>
+            <button class="button number" onclick="append('9')">9</button>
+            <button class="button primary" onclick="append('*')">×</button>
+            
+            <!-- Number Row -->
+            <button class="button number" onclick="append('4')">4</button>
+            <button class="button number" onclick="append('5')">5</button>
+            <button class="button number" onclick="append('6')">6</button>
+            <button class="button primary" onclick="append('-')">−</button>
+            
+            <!-- Number Row -->
+            <button class="button number" onclick="append('1')">1</button>
+            <button class="button number" onclick="append('2')">2</button>
+            <button class="button number" onclick="append('3')">3</button>
+            <button class="button primary" onclick="append('+')">+</button>
+            
+            <!-- Final Row -->
+            <button class="button number" onclick="append('0')">0</button>
+            <button class="button number" onclick="append('.')">.</button>
+            <button class="button function" onclick="append('+/-')">±</button>
+            <button class="button secondary col-span-2" onclick="calculate()">=</button>
+        </div>
+    </div>
+
+    <script>
+        const display = document.getElementById('display');
+
+        function append(value) {
+            if (display.textContent === '0' || display.textContent === 'Error') {
+                display.textContent = value;
+            } else {
+                display.textContent += value;
+            }
+        }
+
+        function clearDisplay() {
+            display.textContent = '0';
+        }
+
+        function backspace() {
+            display.textContent = display.textContent.slice(0, -1) || '0';
+        }
+
+        function calculate() {
+            try {
+                // Replace symbols with JavaScript operators
+                const expression = display.textContent
+                    .replace(/÷/g, '/')
+                    .replace(/×/g, '*')
+                    .replace(/−/g, '-')
+                    .replace(/%/g, '/100')
+                    .replace(/x²/g, '**2')
+                    .replace(/xʸ/g, '**')
+                    .replace(/√/g, 'Math.sqrt')
+                    .replace(/sin/g, 'Math.sin')
+                    .replace(/cos/g, 'Math.cos')
+                    .replace(/tan/g, 'Math.tan')
+                    .replace(/log/g, 'Math.log10')
+                    .replace(/ln/g, 'Math.log');
+
+                const result = eval(expression);
+                display.textContent = result;
+            } catch (error) {
+                display.textContent = 'Error';
+            }
+        }
+
+        // Initialize lucide icons
+        lucide.createIcons();
+    </script>
+</body>
+</html>
