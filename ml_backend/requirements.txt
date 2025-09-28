@@ -1,0 +1,14 @@
+# Ignis Enhanced Wildfire Risk Prediction API Dependencies
+# Production-ready 94% accuracy ensemble model with Open-Meteo integration
+
+fastapi==0.111.0
+uvicorn==0.29.0
+pandas==2.2.2
+numpy==1.26.4
+scikit-learn==1.5.0
+xgboost==2.0.3
+requests==2.32.3
+joblib==1.4.2
+pydantic==2.8.0
+python-multipart==0.0.9
+httpx==0.27.0

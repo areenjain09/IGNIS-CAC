@@ -153,7 +153,7 @@ class ShelterService: ObservableObject {
     
     // MARK: - API Integration
     
-    private func fetchSheltersFromMultipleSources(near location: CLLocation) async throws -> [EmergencyShelter] {
+    func fetchSheltersFromMultipleSources(near location: CLLocation) async throws -> [EmergencyShelter] {
         // Try multiple sources in parallel
         async let redCrossShelters = fetchRedCrossShelters(near: location)
         async let femaDisasterShelters = fetchFEMADisasterShelters(near: location)
@@ -217,7 +217,7 @@ class ShelterService: ObservableObject {
     }
     
     // MARK: - Sample Data (Fallback)
-    private func createSampleShelters(near location: CLLocation) -> [EmergencyShelter] {
+    func createSampleShelters(near location: CLLocation) -> [EmergencyShelter] {
         let sampleShelters = createRedCrossSampleShelters(near: location) +
                            createFEMASampleShelters(near: location) +
                            createLocalSampleShelters(near: location)
@@ -244,30 +244,44 @@ class ShelterService: ObservableObject {
     
     private func createRedCrossSampleShelters(near location: CLLocation) -> [EmergencyShelter] {
         let baseCoordinate = location.coordinate
+        
+        // Create location-specific identifiers based on coordinates
+        let locationHash = abs(Int(baseCoordinate.latitude * 1000) + Int(baseCoordinate.longitude * 1000))
+        let shelterVariations = [
+            ("North", "Community Center", "Main St", ["Food", "Medical Care", "Bedding", "WiFi"]),
+            ("South", "High School Gymnasium", "Oak Ave", ["Gymnasium", "Cafeteria", "Restrooms", "Parking"]),
+            ("East", "Recreation Center", "Pine Rd", ["Food", "Showers", "Bedding", "Phone Access"]),
+            ("West", "Emergency Shelter", "Elm Dr", ["Food", "Medical Care", "Child Care", "WiFi"]),
+            ("Central", "Relief Center", "Cedar Blvd", ["Food", "Bedding", "Medical Care", "Pet Area"])
+        ]
+        
+        let variation = shelterVariations[locationHash % shelterVariations.count]
+        let streetNumber = 100 + (locationHash % 900)
+        
         return [
             EmergencyShelter(
-                name: "Red Cross Emergency Shelter",
-                address: "1234 Relief Ave, Emergency City",
+                name: "Red Cross \(variation.0) \(variation.1)",
+                address: "\(streetNumber) \(variation.2), Fire Zone \(locationHash % 100)",
                 coordinates: CLLocationCoordinate2D(
-                    latitude: baseCoordinate.latitude + 0.01,
-                    longitude: baseCoordinate.longitude + 0.01
+                    latitude: baseCoordinate.latitude + Double.random(in: -0.02...0.02),
+                    longitude: baseCoordinate.longitude + Double.random(in: -0.02...0.02)
                 ),
-                capacity: "500 people",
-                status: .open,
+                capacity: "\(400 + (locationHash % 300)) people",
+                status: [.open, .limited, .full][locationHash % 3],
                 type: .general,
                 phone: "1-800-RED-CROSS",
-                amenities: ["Food", "Medical Care", "Bedding", "WiFi"],
+                amenities: variation.3,
                 lastUpdated: Date()
             ),
             EmergencyShelter(
-                name: "Red Cross Pet-Friendly Shelter",
-                address: "5678 Companion St, Safe Haven",
+                name: "Red Cross Pet-Friendly \(variation.1)",
+                address: "\(streetNumber + 50) \(variation.2), Safe Zone \(locationHash % 50)",
                 coordinates: CLLocationCoordinate2D(
-                    latitude: baseCoordinate.latitude - 0.02,
-                    longitude: baseCoordinate.longitude + 0.015
+                    latitude: baseCoordinate.latitude + Double.random(in: -0.03...0.01),
+                    longitude: baseCoordinate.longitude + Double.random(in: -0.01...0.03)
                 ),
-                capacity: "300 people + pets",
-                status: .open,
+                capacity: "\(200 + (locationHash % 200)) people + pets",
+                status: [.open, .limited][locationHash % 2],
                 type: .pets,
                 phone: "1-800-RED-CROSS",
                 amenities: ["Pet Care", "Food", "Veterinary Services", "Bedding"],
@@ -278,18 +292,32 @@ class ShelterService: ObservableObject {
     
     private func createFEMASampleShelters(near location: CLLocation) -> [EmergencyShelter] {
         let baseCoordinate = location.coordinate
+        
+        // Create location-specific identifiers
+        let locationHash = abs(Int(baseCoordinate.latitude * 1000) + Int(baseCoordinate.longitude * 1000))
+        let femaFacilities = [
+            ("Disaster Relief Center", "Federal Way"),
+            ("Emergency Response Hub", "Government Blvd"),
+            ("Crisis Support Center", "FEMA Dr"),
+            ("Disaster Recovery Station", "Relief Rd"),
+            ("Emergency Operations Center", "Federal Ave")
+        ]
+        
+        let facility = femaFacilities[locationHash % femaFacilities.count]
+        let streetNumber = 1000 + (locationHash % 9000)
+        
         return [
             EmergencyShelter(
-                name: "FEMA Disaster Relief Center",
-                address: "9876 Federal Way, Disaster Response Zone",
+                name: "FEMA \(facility.0)",
+                address: "\(streetNumber) \(facility.1), Response Zone \(locationHash % 10)",
                 coordinates: CLLocationCoordinate2D(
-                    latitude: baseCoordinate.latitude + 0.025,
-                    longitude: baseCoordinate.longitude - 0.02
+                    latitude: baseCoordinate.latitude + Double.random(in: -0.03...0.03),
+                    longitude: baseCoordinate.longitude + Double.random(in: -0.03...0.03)
                 ),
-                capacity: "1000 people",
-                status: .open,
+                capacity: "\(800 + (locationHash % 400)) people",
+                status: [.open, .limited][locationHash % 2],
                 type: .general,
-                phone: "1-800-621-3362",
+                phone: "1-800-621-FEMA",
                 amenities: ["Food", "Medical Care", "Case Management", "Financial Assistance"],
                 lastUpdated: Date()
             )
@@ -298,46 +326,60 @@ class ShelterService: ObservableObject {
     
     private func createLocalSampleShelters(near location: CLLocation) -> [EmergencyShelter] {
         let baseCoordinate = location.coordinate
+        
+        // Create location-specific identifiers
+        let locationHash = abs(Int(baseCoordinate.latitude * 1000) + Int(baseCoordinate.longitude * 1000))
+        let schoolNames = ["Community High School", "Riverside Elementary", "Mountain View School", "Valley High", "Oakwood Academy"]
+        let centerNames = ["Community Center", "Recreation Center", "Civic Center", "Cultural Center", "Activity Center"]
+        let streetNames = ["Education Blvd", "School St", "Learning Ave", "Academic Dr", "Campus Rd"]
+        let townNames = ["Local Town", "Riverside", "Mountain View", "Valley Springs", "Oakwood"]
+        
+        let schoolName = schoolNames[locationHash % schoolNames.count]
+        let centerName = centerNames[locationHash % centerNames.count]
+        let streetName = streetNames[locationHash % streetNames.count]
+        let townName = townNames[locationHash % townNames.count]
+        let streetNumber = 100 + (locationHash % 900)
+        
         return [
             EmergencyShelter(
-                name: "Community High School",
-                address: "123 Education Blvd, Local Town",
+                name: schoolName,
+                address: "\(streetNumber) \(streetName), \(townName) \(locationHash % 100)",
                 coordinates: CLLocationCoordinate2D(
-                    latitude: baseCoordinate.latitude - 0.015,
-                    longitude: baseCoordinate.longitude - 0.01
+                    latitude: baseCoordinate.latitude + Double.random(in: -0.02...0.02),
+                    longitude: baseCoordinate.longitude + Double.random(in: -0.02...0.02)
                 ),
-                capacity: "800 people",
-                status: .open,
+                capacity: "\(400 + (locationHash % 600)) people",
+                status: [.open, .limited, .full][locationHash % 3],
                 type: .general,
-                phone: "(555) 123-4567",
+                phone: "(555) \(100 + (locationHash % 900))-\(1000 + (locationHash % 9000))",
                 amenities: ["Gymnasium", "Cafeteria", "Restrooms", "Parking"],
                 lastUpdated: Date()
             ),
             EmergencyShelter(
-                name: "Central Community Center",
-                address: "456 Community Dr, Neighborhood",
+                name: centerName,
+                address: "\(streetNumber + 200) Community Dr, \(townName) District \(locationHash % 50)",
                 coordinates: CLLocationCoordinate2D(
-                    latitude: baseCoordinate.latitude + 0.005,
-                    longitude: baseCoordinate.longitude - 0.025
+                    latitude: baseCoordinate.latitude + Double.random(in: -0.03...0.01),
+                    longitude: baseCoordinate.longitude + Double.random(in: -0.01...0.03)
                 ),
-                capacity: "400 people",
-                status: .limited,
+                capacity: "\(200 + (locationHash % 400)) people",
+                status: [.open, .limited][locationHash % 2],
                 type: .family,
-                phone: "(555) 987-6543",
+                phone: "(555) \(200 + (locationHash % 800))-\(2000 + (locationHash % 8000))",
                 amenities: ["Family Rooms", "Kitchen", "Playground", "WiFi"],
                 lastUpdated: Date()
             ),
             EmergencyShelter(
                 name: "Medical Needs Shelter",
-                address: "789 Healthcare Ave, Medical District",
+                address: "\(500 + (locationHash % 300)) Healthcare Ave, Medical Zone \(locationHash % 20)",
                 coordinates: CLLocationCoordinate2D(
-                    latitude: baseCoordinate.latitude - 0.008,
-                    longitude: baseCoordinate.longitude + 0.03
+                    latitude: baseCoordinate.latitude + Double.random(in: -0.025...0.025),
+                    longitude: baseCoordinate.longitude + Double.random(in: -0.025...0.025)
                 ),
-                capacity: "150 people",
-                status: .open,
+                capacity: "\(100 + (locationHash % 150)) people",
+                status: [.open, .limited][locationHash % 2],
                 type: .medical,
-                phone: "(555) 456-7890",
+                phone: "(555) \(300 + (locationHash % 700))-\(3000 + (locationHash % 7000))",
                 amenities: ["Medical Staff", "Medication Storage", "Accessible Facilities", "Backup Power"],
                 lastUpdated: Date()
             )

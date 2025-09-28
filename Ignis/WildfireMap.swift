@@ -128,7 +128,7 @@ struct WildfireMap: View {
                         }
                 }
                 .padding(.trailing, 16)
-                    .padding(.bottom, 100)
+                    .padding(.bottom, 140) // Increased padding to clear the custom nav bar
                 }
                 .allowsHitTesting(true)
             }

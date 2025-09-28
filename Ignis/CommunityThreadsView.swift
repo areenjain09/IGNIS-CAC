@@ -162,7 +162,7 @@ struct CommunityThreadsView: View {
     // MARK: - Modern UI Components
     
     private var modernHeaderView: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 18) {
             HStack {
                 Text(" Community")
                     .font(.appTitle)
@@ -196,7 +196,7 @@ struct CommunityThreadsView: View {
             }
             
             // Stats row
-            HStack(spacing: 2.5) {
+            HStack(spacing: 4) {
                 StatChip(
                     icon: "person.3.fill",
                     value: "\(posts.count)",
@@ -212,13 +212,13 @@ struct CommunityThreadsView: View {
                 StatChip(
                     icon: "bubble.left.fill",
                     value: "\(totalComments)",
-                    label: "Comments"
+                    label: "Replies"
                 )
                 
                 Spacer()
             }
         }
-        .padding(.horizontal, 9)
+        .padding(.horizontal, 7)
         .padding(.top, 8)
         .padding(.bottom, 16)
     }

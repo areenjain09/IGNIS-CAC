@@ -29,7 +29,8 @@ struct MainNavigationView: View {
                 ZStack {
                     // Background - Pure black
                     Color.black
-                        .ignoresSafeArea(.all, edges: .all)
+                        .ignoresSafeArea(.all)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                     
                     // Content based on selected tab
                     Group {
@@ -40,7 +41,7 @@ struct MainNavigationView: View {
                             MentalHelpView()
                         case 2: // Home
                             HomePageView()
-                        case 3: // Education
+                        case 3: // Education (accessible via Learn button)
                             EducationView()
                         case 4: // Wildfire Map
                             WildfireMap()
@@ -50,6 +51,8 @@ struct MainNavigationView: View {
                             ResourcesView()
                         case 7: // Legislative
                             LegislativeView()
+                        case 8: // Fire Risk
+                            FireRiskView()
                         default:
                             HomePageView()
                         }
@@ -74,6 +77,12 @@ struct MainNavigationView: View {
                         .zIndex(1)
                     }
                 }
+                .navigationBarHidden(true)
+                .navigationViewStyle(StackNavigationViewStyle())
+                .onAppear {
+                    // Additional system UI hiding
+                    hideSystemTabBar()
+                }
                 .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("NavigateToTab"))) { notification in
                     if let tabIndex = notification.userInfo?["tabIndex"] as? Int {
                         withAnimation(.easeInOut(duration: 0.3)) {
@@ -93,6 +102,31 @@ struct MainNavigationView: View {
                 }
             }
     }
+    
+    // Helper function to hide system tab bar
+    private func hideSystemTabBar() {
+        DispatchQueue.main.async {
+            // Find the current window scene and hide tab bar
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let window = windowScene.windows.first,
+               let tabBarController = window.rootViewController as? UITabBarController {
+                tabBarController.tabBar.isHidden = true
+                tabBarController.tabBar.alpha = 0
+            }
+            
+            // Alternative approach using UITabBar appearance
+            UITabBar.appearance().isHidden = true
+            UITabBar.appearance().alpha = 0
+        }
+    }
+    
+    // Helper function to configure status bar appearance
+    private func configureStatusBarAppearance() {
+        DispatchQueue.main.async {
+            // Status bar configuration is now handled through preferredColorScheme(.dark)
+            // and the individual view controllers
+        }
+    }
 }
 
 // MARK: - Side Menu View
@@ -104,11 +138,11 @@ struct SideMenuView: View {
         ("Home", "house.fill", 2),
         ("Chatbot", "message.fill", 0),
         ("Mental Health", "heart.fill", 1),
-        ("Education", "book.fill", 3),
         ("Wildfire Map", "map.fill", 4),
         ("Community", "person.3.fill", 5),
         ("Resources", "gift.fill", 6),
-        ("Legislative", "building.columns.fill", 7)
+        ("Legislative", "building.columns.fill", 7),
+        ("Fire Risk", "flame.fill", 8)
     ]
     
     var body: some View {
@@ -236,22 +270,26 @@ struct CustomFloatingNavBar: View {
     @State private var isPressed = false
     
     var body: some View {
-        HStack {
+        HStack(spacing: 0) {
             // Chatbot Button (Left)
             NavBarButton(
                 icon: "message.fill",
-                title: "Chat",
+                title: "Chatbot",
                 isSelected: selectedTab == 0,
                 action: { selectedTab = 0 }
             )
             
-            // Mental Health Button
+            Spacer()
+            
+            // Map Button
             NavBarButton(
-                icon: "heart.fill",
-                title: "Mental",
-                isSelected: selectedTab == 1,
-                action: { selectedTab = 1 }
+                icon: "map.fill",
+                title: "Map",
+                isSelected: selectedTab == 4,
+                action: { selectedTab = 4 }
             )
+            
+            Spacer()
             
             // Home Button (Center)
             Button {
@@ -278,20 +316,23 @@ struct CustomFloatingNavBar: View {
             }
             .accessibilityLabel("Home")
             
-            // Education Button
+            Spacer()
+            // Mental Health Button
             NavBarButton(
-                icon: "book.fill",
-                title: "Learn",
-                isSelected: selectedTab == 3,
-                action: { selectedTab = 3 }
+                icon: "heart.fill",
+                title: "Mental",
+                isSelected: selectedTab == 1,
+                action: { selectedTab = 1 }
             )
             
-            // Map Button
+            Spacer()
+            
+            // Fire Risk Button
             NavBarButton(
-                icon: "map.fill",
-                title: "Map",
-                isSelected: selectedTab == 4,
-                action: { selectedTab = 4 }
+                icon: "flame.fill",
+                title: "Risk",
+                isSelected: selectedTab == 8,
+                action: { selectedTab = 8 }
             )
         }
         .padding(.horizontal, 20)
@@ -365,6 +406,10 @@ struct IgnisApp: App {
     var body: some Scene {
         WindowGroup {
             MainNavigationView()
+                .preferredColorScheme(.dark) // Force dark mode
+                .onAppear {
+                    // Status bar configuration is handled through preferredColorScheme(.dark)
+                }
         }
     }
 }
@@ -372,6 +417,9 @@ struct IgnisApp: App {
 // MARK: - Optimized App Delegate
 class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
+        
+        // Configure system UI appearance
+        configureSystemAppearance()
         
         // Set up notification delegate
         UNUserNotificationCenter.current().delegate = self
@@ -445,5 +493,35 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         }
         
         completionHandler()
+    }
+    
+    // MARK: - System UI Configuration
+    private func configureSystemAppearance() {
+        // Configure navigation bar appearance
+        let navigationBarAppearance = UINavigationBarAppearance()
+        navigationBarAppearance.configureWithTransparentBackground()
+        navigationBarAppearance.backgroundColor = .clear
+        navigationBarAppearance.shadowColor = .clear
+        
+        UINavigationBar.appearance().standardAppearance = navigationBarAppearance
+        UINavigationBar.appearance().compactAppearance = navigationBarAppearance
+        UINavigationBar.appearance().scrollEdgeAppearance = navigationBarAppearance
+        
+        // Configure tab bar appearance to be completely hidden
+        let tabBarAppearance = UITabBarAppearance()
+        tabBarAppearance.configureWithTransparentBackground()
+        tabBarAppearance.backgroundColor = .clear
+        tabBarAppearance.shadowColor = .clear
+        
+        UITabBar.appearance().standardAppearance = tabBarAppearance
+        UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
+        
+        // Hide tab bar completely
+        UITabBar.appearance().isHidden = true
+        UITabBar.appearance().alpha = 0.0
+        UITabBar.appearance().frame = CGRect.zero
+        
+        // Configure status bar appearance (handled through view controllers now)
+        // UIApplication.shared.statusBarStyle is deprecated - handled in view controllers
     }
 }

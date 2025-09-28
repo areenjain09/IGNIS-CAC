@@ -68,20 +68,22 @@ struct LegislativeView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .padding()
                     } else {
-                        TabView(selection: $selectedTab) {
-                            OverviewTab(dataService: dataService)
-                                .tag(0)
-                            
-                            PoliciesTab(dataService: dataService)
-                                .tag(1)
-                            
-                            FundingTab(dataService: dataService)
-                                .tag(2)
-                            
-                            ActionTab(dataService: dataService)
-                                .tag(3)
+                        // Custom content switching without TabView
+                        Group {
+                            switch selectedTab {
+                            case 0:
+                                OverviewTab(dataService: dataService)
+                            case 1:
+                                PoliciesTab(dataService: dataService)
+                            case 2:
+                                FundingTab(dataService: dataService)
+                            case 3:
+                                ActionTab(dataService: dataService)
+                            default:
+                                OverviewTab(dataService: dataService)
+                            }
                         }
-                        .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+                        .animation(.easeInOut(duration: 0.2), value: selectedTab)
                         .padding(.bottom, 100) // Add bottom padding for navigation bar
                     }
                 }

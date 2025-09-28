@@ -33,7 +33,7 @@ struct HomePageView: View {
         } else if totalAcres > 20000 || activeFires.count > 10 {
             return "High"
         } else if totalAcres > 5000 || activeFires.count > 5 {
-            return "Moderate"
+            return "Average"
         } else {
             return "Low"
         }
@@ -225,9 +225,9 @@ struct HomePageView: View {
                 .opacity(animateCards ? 1.0 : 0.0)
                 
                 CircularActionButton(
-                    title: "Shelters",
-                    icon: "house.fill",
-                    action: { navigateToTab = 6 }
+                    title: "Risk",
+                    icon: "flame.fill",
+                    action: { navigateToTab = 8 }
                 )
                 .offset(x: animateCards ? 0 : -30)
                 .opacity(animateCards ? 1.0 : 0.0)
