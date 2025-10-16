@@ -153,21 +153,21 @@ struct LandingPageView: View {
                 Image("fire_panel")
                     .resizable()
                     .aspectRatio(contentMode: .fill)
-                    .frame(maxWidth: 120, maxHeight: .infinity)
+                    .frame(maxWidth: 115, maxHeight: .infinity)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
             } else if index == 1 {
                 // Second panel: Emergency image
                 Image("emergency_panel")
                     .resizable()
                     .aspectRatio(contentMode: .fill)
-                    .frame(maxWidth: 135, maxHeight: .infinity)
+                    .frame(maxWidth: 132, maxHeight: .infinity)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
             } else {
                 // Third panel: Evacuation image
                 Image("evacuation_panel")
                     .resizable()
                     .aspectRatio(contentMode: .fill)
-                    .frame(maxWidth: 120, maxHeight: .infinity)
+                    .frame(maxWidth: 115, maxHeight: .infinity)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
             }
         }

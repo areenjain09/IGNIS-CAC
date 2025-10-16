@@ -140,7 +140,7 @@ class EnhancedFireRiskService: ObservableObject {
     // Personal prediction support
     @Published var currentPrediction: AreaFireRiskPrediction?
     
-    private let apiBaseUrl = "http://127.0.0.1:8000"
+    private let apiBaseUrl = "http://192.168.86.24:8000"
     private let batchSize = 25 // Process areas in batches for better performance
     
     // Dependencies
@@ -203,7 +203,19 @@ class EnhancedFireRiskService: ObservableObject {
             }
         } catch {
             await MainActor.run {
-                self.errorMessage = "Enhanced prediction failed: \(error.localizedDescription)"
+                // Provide more user-friendly error messages
+                if let urlError = error as? URLError {
+                    switch urlError.code {
+                    case .cannotConnectToHost, .notConnectedToInternet:
+                        self.errorMessage = "Cannot connect to fire risk service. Please check your internet connection and try again."
+                    case .timedOut:
+                        self.errorMessage = "Fire risk service is taking too long to respond. Please try again later."
+                    default:
+                        self.errorMessage = "Network error: \(urlError.localizedDescription)"
+                    }
+                } else {
+                    self.errorMessage = "Enhanced prediction failed: \(error.localizedDescription)"
+                }
                 self.isLoading = false
                 self.loadingProgress = 0.0
                 self.loadingStatus = "Error occurred"
@@ -363,7 +375,18 @@ class EnhancedFireRiskService: ObservableObject {
         
         if httpResponse.statusCode != 200 {
             let errorString = String(data: data, encoding: .utf8) ?? "Unknown error"
-            throw NSError(domain: "EnhancedFireRiskService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: errorString])
+            let userFriendlyMessage: String
+            switch httpResponse.statusCode {
+            case 500:
+                userFriendlyMessage = "Fire risk service is temporarily unavailable. Please try again later."
+            case 503:
+                userFriendlyMessage = "Fire risk service is under maintenance. Please try again later."
+            case 429:
+                userFriendlyMessage = "Too many requests. Please wait a moment and try again."
+            default:
+                userFriendlyMessage = "Fire risk service error (\(httpResponse.statusCode)). Please try again later."
+            }
+            throw NSError(domain: "EnhancedFireRiskService", code: httpResponse.statusCode, userInfo: [NSLocalizedDescriptionKey: userFriendlyMessage])
         }
         
         let decoder = JSONDecoder()

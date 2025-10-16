@@ -320,7 +320,7 @@ struct CustomFloatingNavBar: View {
             // Mental Health Button
             NavBarButton(
                 icon: "heart.fill",
-                title: "Mental",
+                title: "Support",
                 isSelected: selectedTab == 1,
                 action: { selectedTab = 1 }
             )
