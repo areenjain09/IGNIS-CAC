@@ -1,14 +1,12 @@
 import SwiftUI
 
-// MARK: - Lesson Detail View
-/// Comprehensive lesson view with reading progress, notes, and interactive elements
 struct LessonDetailView: View {
     @StateObject private var educationService = EducationService.shared
     @Environment(\.dismiss) private var dismiss
-    
+
     let lesson: Lesson
     let module: LearningModule
-    
+
     @State private var readingProgress: Double = 0.0
     @State private var startTime = Date()
     @State private var showNotes = false
@@ -17,16 +15,15 @@ struct LessonDetailView: View {
     @State private var showQuiz = false
     @State private var currentSectionIndex = 0
     @State private var animateProgress = false
-    
-    // Reading timer
+
     @State private var timer: Timer?
     @State private var readingTime: TimeInterval = 0
-    
+
     var body: some View {
         NavigationStack {
             ZStack {
                 Color.appGradientBackground.ignoresSafeArea()
-                
+
                 ScrollView {
                     VStack(spacing: 0) {
                         headerSection
@@ -53,9 +50,7 @@ struct LessonDetailView: View {
             }
         }
     }
-    
-    // MARK: - View Components
-    
+
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
@@ -67,16 +62,16 @@ struct LessonDetailView: View {
                         .background(Color.appCard)
                         .clipShape(Circle())
                 }
-                
+
                 Spacer()
-                
+
                 HStack(spacing: 12) {
                     Button(action: { toggleBookmark() }) {
                         Image(systemName: isBookmarked ? "bookmark.fill" : "bookmark")
                             .font(.title3)
                             .foregroundColor(isBookmarked ? .appPrimary : .appTextSecondary)
                     }
-                    
+
                     Button(action: { showNotes = true }) {
                         Image(systemName: "note.text")
                             .font(.title3)
@@ -88,20 +83,20 @@ struct LessonDetailView: View {
                 .background(Color.appCard)
                 .clipShape(Capsule())
             }
-            
+
             VStack(alignment: .leading, spacing: 8) {
                 Text(lesson.title)
                     .font(.appTitle)
                     .foregroundColor(.appTextPrimary)
                     .multilineTextAlignment(.leading)
-                
+
                 HStack {
                     Label(lesson.formattedReadingTime, systemImage: "clock")
                         .font(.appCaption)
                         .foregroundColor(.appTextSecondary)
-                    
+
                     Spacer()
-                    
+
                     Text("Lesson 1 of \(module.lessons.count)")
                         .font(.appCaption)
                         .foregroundColor(.appTextTertiary)
@@ -111,21 +106,21 @@ struct LessonDetailView: View {
         .padding(.horizontal, 20)
         .padding(.top, 20)
     }
-    
+
     private var progressIndicator: some View {
         VStack(spacing: 12) {
             HStack {
                 Text("Reading Progress")
                     .font(.appSubheadline)
                     .foregroundColor(.appTextSecondary)
-                
+
                 Spacer()
-                
+
                 Text("\(Int(readingProgress * 100))%")
                     .font(.appSubheadline.bold())
                     .foregroundColor(.appPrimary)
             }
-            
+
             ProgressView(value: readingProgress)
                 .progressViewStyle(LinearProgressViewStyle(tint: .appPrimary))
                 .scaleEffect(x: 1, y: 2, anchor: .center)
@@ -134,7 +129,7 @@ struct LessonDetailView: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
     }
-    
+
     private var contentSections: some View {
         LazyVStack(spacing: 24) {
             ForEach(Array(lesson.content.sections.enumerated()), id: \.element.id) { index, section in
@@ -146,16 +141,11 @@ struct LessonDetailView: View {
                     }
                 )
             }
-            
-            // Key points section removed for simplicity
+
         }
         .padding(.horizontal, 20)
     }
-    
 
-    
-
-    
     private var actionButtons: some View {
         VStack(spacing: 16) {
             if readingProgress >= 0.8 && !lesson.isCompleted {
@@ -176,7 +166,7 @@ struct LessonDetailView: View {
                     animateProgress = true
                 }
             }
-            
+
             if lesson.isCompleted && module.quiz != nil {
                 Button(action: { showQuiz = true }) {
                     HStack {
@@ -199,30 +189,25 @@ struct LessonDetailView: View {
         .padding(.horizontal, 20)
         .padding(.bottom, 100)
     }
-    
-    // MARK: - Helper Methods
-    
+
     private func setupLesson() {
         startTime = Date()
         userNotes = educationService.persistenceService.loadLessonNotes(lessonId: lesson.id)
         isBookmarked = module.bookmarkedLessons.contains(lesson.id)
-        
-        // Start reading timer
+
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
             readingTime += 1
         }
-        
-        // Simulate progressive reading
+
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
             simulateReading()
         }
     }
-    
+
     private func simulateReading() {
         let totalSections = lesson.content.sections.count
         guard currentSectionIndex < totalSections else { return }
-        
-        // Show next section after a delay
+
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
             if currentSectionIndex < totalSections - 1 {
                 currentSectionIndex += 1
@@ -230,57 +215,55 @@ struct LessonDetailView: View {
             }
         }
     }
-    
+
     private func updateReadingProgress(for sectionIndex: Int) {
         let totalSections = lesson.content.sections.count
         let newProgress = Double(sectionIndex + 1) / Double(totalSections)
-        
+
         withAnimation(.easeInOut(duration: 0.3)) {
             readingProgress = newProgress
         }
     }
-    
+
     private func markAsComplete() {
         timer?.invalidate()
         let timeSpent = Date().timeIntervalSince(startTime)
         educationService.completeLesson(lesson, timeSpent: timeSpent)
-        
-        // Haptic feedback
+
         let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
         impactFeedback.impactOccurred()
-        
+
         dismiss()
     }
-    
+
     private func completeLesson() {
         timer?.invalidate()
-        // Auto-save reading time even if not marked complete
-        if readingTime > 30 { // Only if spent meaningful time
-            // Could save partial progress here
+
+        if readingTime > 30 {
+
         }
     }
-    
+
     private func toggleBookmark() {
         educationService.toggleBookmark(lessonId: lesson.id, moduleId: module.id)
         isBookmarked.toggle()
-        
+
         let impactFeedback = UIImpactFeedbackGenerator(style: .light)
         impactFeedback.impactOccurred()
     }
-    
+
     private func saveNotes() {
         educationService.updateLessonNotes(lessonId: lesson.id, moduleId: module.id, notes: userNotes)
     }
 }
 
-// MARK: - Content Section View
 struct ContentSectionView: View {
     let section: ContentSection
     let isVisible: Bool
     let onVisible: () -> Void
-    
+
     @State private var hasAppeared = false
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             if let title = section.title {
@@ -288,7 +271,7 @@ struct ContentSectionView: View {
                     .font(.appHeadline)
                     .foregroundColor(.appTextPrimary)
             }
-            
+
             Group {
                 switch section.type {
                 case .text:
@@ -297,7 +280,7 @@ struct ContentSectionView: View {
                         .foregroundColor(.appTextPrimary)
                         .lineSpacing(4)
                         .multilineTextAlignment(.leading)
-                
+
                 case .image:
                     if let mediaURL = section.mediaURL {
                         AsyncImage(url: mediaURL) { image in
@@ -315,13 +298,13 @@ struct ContentSectionView: View {
                         }
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
-                
+
                 case .checklist:
                     ChecklistView(items: section.content.components(separatedBy: "\n"))
-                
+
                 case .infographic:
                     InfographicView(content: section.content)
-                
+
                 default:
                     Text(section.content)
                         .font(.appBody)
@@ -343,10 +326,9 @@ struct ContentSectionView: View {
     }
 }
 
-// MARK: - Interactive Element View
 struct InteractiveElementView: View {
     let element: InteractiveElement
-    
+
     var body: some View {
         switch element {
         case .checklistItem(let item, let isChecked):
@@ -363,12 +345,10 @@ struct InteractiveElementView: View {
     }
 }
 
-// MARK: - Supporting Views
-
 struct ChecklistView: View {
     let items: [String]
     @State private var checkedItems: Set<Int> = []
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             ForEach(Array(items.enumerated()), id: \.offset) { index, item in
@@ -381,7 +361,7 @@ struct ChecklistView: View {
             }
         }
     }
-    
+
     private func toggleItem(_ index: Int) {
         if checkedItems.contains(index) {
             checkedItems.remove(index)
@@ -395,20 +375,20 @@ struct ChecklistItemView: View {
     let item: String
     let isChecked: Bool
     var onToggle: (() -> Void)? = nil
-    
+
     var body: some View {
         Button(action: { onToggle?() }) {
             HStack(spacing: 12) {
                 Image(systemName: isChecked ? "checkmark.square.fill" : "square")
                     .foregroundColor(isChecked ? .appSuccess : .appTextSecondary)
                     .font(.title3)
-                
+
                 Text(item)
                     .font(.appBody)
                     .foregroundColor(.appTextPrimary)
                     .strikethrough(isChecked)
                     .multilineTextAlignment(.leading)
-                
+
                 Spacer()
             }
         }
@@ -419,13 +399,13 @@ struct ChecklistItemView: View {
 
 struct InfographicView: View {
     let content: String
-    
+
     var body: some View {
         VStack(spacing: 16) {
             Image(systemName: "chart.bar.fill")
                 .font(.largeTitle)
                 .foregroundColor(.appPrimary)
-            
+
             Text(content)
                 .font(.appBody)
                 .foregroundColor(.appTextPrimary)
@@ -439,28 +419,28 @@ struct InfographicView: View {
 
 struct QuickQuizView: View {
     let quizId: UUID
-    
+
     var body: some View {
         VStack(spacing: 12) {
             HStack {
                 Image(systemName: "questionmark.circle.fill")
                     .foregroundColor(.appPrimary)
                     .font(.title2)
-                
+
                 Text("Quick Knowledge Check")
                     .font(.appSubheadline.bold())
                     .foregroundColor(.appTextPrimary)
-                
+
                 Spacer()
             }
-            
+
             Text("Test what you've learned so far")
                 .font(.appCaption)
                 .foregroundColor(.appTextSecondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
-            
+
             Button("Start Quiz") {
-                // Handle quiz start
+
             }
             .font(.appCaption.bold())
             .foregroundColor(.white)
@@ -475,23 +455,23 @@ struct QuickQuizView: View {
 
 struct FlashcardPreview: View {
     let cardId: UUID
-    
+
     var body: some View {
         VStack(spacing: 12) {
             HStack {
                 Image(systemName: "rectangle.stack.fill")
                     .foregroundColor(.appSecondary)
                     .font(.title2)
-                
+
                 Text("Flashcard Review")
                     .font(.appSubheadline.bold())
                     .foregroundColor(.appTextPrimary)
-                
+
                 Spacer()
             }
-            
+
             Button("Review Flashcards") {
-                // Handle flashcard review
+
             }
             .font(.appCaption.bold())
             .foregroundColor(.appTextPrimary)
@@ -507,23 +487,23 @@ struct FlashcardPreview: View {
 
 struct SimulationView: View {
     let title: String
-    
+
     var body: some View {
         VStack(spacing: 12) {
             HStack {
                 Image(systemName: "play.rectangle.fill")
                     .foregroundColor(.appAccent)
                     .font(.title2)
-                
+
                 Text(title)
                     .font(.appSubheadline.bold())
                     .foregroundColor(.appTextPrimary)
-                
+
                 Spacer()
             }
-            
+
             Button("Start Simulation") {
-                // Handle simulation
+
             }
             .font(.appCaption.bold())
             .foregroundColor(.white)
@@ -539,23 +519,23 @@ struct SimulationView: View {
 
 struct CalculatorView: View {
     let title: String
-    
+
     var body: some View {
         VStack(spacing: 12) {
             HStack {
                 Image(systemName: "calculator.fill")
                     .foregroundColor(.appInfo)
                     .font(.title2)
-                
+
                 Text(title)
                     .font(.appSubheadline.bold())
                     .foregroundColor(.appTextPrimary)
-                
+
                 Spacer()
             }
-            
+
             Button("Open Calculator") {
-                // Handle calculator
+
             }
             .font(.appCaption.bold())
             .foregroundColor(.white)
@@ -569,12 +549,11 @@ struct CalculatorView: View {
     }
 }
 
-// MARK: - Notes View
 struct NotesView: View {
     @Binding var notes: String
     let onSave: () -> Void
     @Environment(\.dismiss) private var dismiss
-    
+
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
@@ -584,7 +563,7 @@ struct NotesView: View {
                     .background(Color.appCard)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .padding(20)
-                
+
                 Spacer()
             }
             .background(Color.appGradientBackground)
@@ -596,7 +575,7 @@ struct NotesView: View {
                         dismiss()
                     }
                 }
-                
+
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") {
                         onSave()
@@ -609,7 +588,6 @@ struct NotesView: View {
     }
 }
 
-// MARK: - Preview
 struct LessonDetailView_Previews: PreviewProvider {
     static var previews: some View {
         LessonDetailView(

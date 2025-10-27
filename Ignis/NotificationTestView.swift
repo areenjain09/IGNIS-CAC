@@ -4,29 +4,25 @@ struct NotificationTestView: View {
     @StateObject private var notificationService = NotificationService.shared
     @State private var showAlert = false
     @State private var alertMessage = ""
-    
+
     var body: some View {
         NavigationStack {
             ZStack {
                 Color.black.ignoresSafeArea()
-                
+
                 ScrollView {
                     VStack(spacing: 20) {
-                        // Notification Status
+
                         statusSection
-                        
-                        // Test Emergency Alerts
+
                         testEmergencySection
-                        
-                        // Test Evacuation Alerts
+
                         testEvacuationSection
-                        
-                        // Test Weather Alerts
+
                         testWeatherSection
-                        
-                        // Test Community Posts
+
                         testCommunitySection
-                        
+
                         Spacer()
                     }
                     .padding(20)
@@ -41,27 +37,27 @@ struct NotificationTestView: View {
             }
         }
     }
-    
+
     private var statusSection: some View {
         VStack(spacing: 16) {
             HStack {
                 Image(systemName: notificationService.isAuthorized ? "checkmark.circle.fill" : "xmark.circle.fill")
                     .foregroundColor(notificationService.isAuthorized ? .green : .red)
                     .font(.title2)
-                
+
                 VStack(alignment: .leading, spacing: 4) {
                     Text(notificationService.isAuthorized ? "Notifications Enabled" : "Notifications Disabled")
                         .font(.headline)
                         .foregroundColor(.white)
-                    
+
                     Text(notificationService.isAuthorized ? "You'll receive test alerts" : "Enable notifications to test")
                         .font(.caption)
                         .foregroundColor(.gray)
                 }
-                
+
                 Spacer()
             }
-            
+
             if !notificationService.isAuthorized {
                 Button("Enable Notifications") {
                     Task {
@@ -79,13 +75,13 @@ struct NotificationTestView: View {
         .background(Color.gray.opacity(0.1))
         .cornerRadius(12)
     }
-    
+
     private var testEmergencySection: some View {
         VStack(spacing: 12) {
             Text("🚨 Test Emergency Alerts")
                 .font(.headline)
                 .foregroundColor(.white)
-            
+
             Button("Send Critical Alert") {
                 notificationService.scheduleEmergencyAlert(
                     title: "🚨 CRITICAL FIRE ALERT",
@@ -100,7 +96,7 @@ struct NotificationTestView: View {
             .background(Color.red)
             .foregroundColor(.white)
             .cornerRadius(8)
-            
+
             Button("Send Moderate Alert") {
                 notificationService.scheduleEmergencyAlert(
                     title: "🔥 Fire Update",
@@ -120,13 +116,13 @@ struct NotificationTestView: View {
         .background(Color.gray.opacity(0.1))
         .cornerRadius(12)
     }
-    
+
     private var testEvacuationSection: some View {
         VStack(spacing: 12) {
             Text("🏃 Test Evacuation Alerts")
                 .font(.headline)
                 .foregroundColor(.white)
-            
+
             Button("Send Mandatory Evacuation") {
                 notificationService.scheduleEvacuationAlert(
                     zone: "North County Zone A",
@@ -140,7 +136,7 @@ struct NotificationTestView: View {
             .background(Color.red)
             .foregroundColor(.white)
             .cornerRadius(8)
-            
+
             Button("Send Voluntary Evacuation") {
                 notificationService.scheduleEvacuationAlert(
                     zone: "South County Zone B",
@@ -159,13 +155,13 @@ struct NotificationTestView: View {
         .background(Color.gray.opacity(0.1))
         .cornerRadius(12)
     }
-    
+
     private var testWeatherSection: some View {
         VStack(spacing: 12) {
             Text("🌤️ Test Weather Alerts")
                 .font(.headline)
                 .foregroundColor(.white)
-            
+
             Button("Send Wind Alert") {
                 notificationService.scheduleWeatherAlert(
                     alertType: "wind",
@@ -179,7 +175,7 @@ struct NotificationTestView: View {
             .background(Color.blue)
             .foregroundColor(.white)
             .cornerRadius(8)
-            
+
             Button("Send Air Quality Alert") {
                 notificationService.scheduleAirQualityAlert(aqi: 150)
                 alertMessage = "Air quality alert sent!"
@@ -195,13 +191,13 @@ struct NotificationTestView: View {
         .background(Color.gray.opacity(0.1))
         .cornerRadius(12)
     }
-    
+
     private var testCommunitySection: some View {
         VStack(spacing: 12) {
             Text("📢 Test Community Posts")
                 .font(.headline)
                 .foregroundColor(.white)
-            
+
             Button("Send Emergency Post") {
                 notificationService.scheduleCommunityPost(
                     postType: "Help Needed",
@@ -216,7 +212,7 @@ struct NotificationTestView: View {
             .background(Color.red)
             .foregroundColor(.white)
             .cornerRadius(8)
-            
+
             Button("Send Help Offer") {
                 notificationService.scheduleCommunityPost(
                     postType: "Offering Help",
@@ -240,4 +236,4 @@ struct NotificationTestView: View {
 
 #Preview {
     NotificationTestView()
-} 
+}

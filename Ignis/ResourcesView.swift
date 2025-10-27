@@ -20,7 +20,7 @@ enum ResourceCategory: String, CaseIterable {
     case donations = "Donations"
     case support = "Support"
     case information = "Information"
-    
+
     var icon: String {
         switch self {
         case .all: return "square.grid.2x2"
@@ -56,10 +56,10 @@ struct ResourcesView: View {
     @State private var selectedShelter: Shelter?
     @StateObject private var shelterService = ShelterService()
     @State private var showingFilters = false
-    
+
     var resources: [ResourceItem] {
         return [
-            // Emergency Services (Critical Priority)
+
             ResourceItem(
                 title: "Emergency Hotline",
                 description: "24/7 emergency assistance and immediate help",
@@ -90,8 +90,7 @@ struct ResourcesView: View {
                 distance: "0.8 miles",
                 priority: .high
             ),
-            
-            // Shelters (High Priority)
+
             ResourceItem(
                 title: "Emergency Shelters",
                 description: "Find nearby evacuation shelters and safe zones",
@@ -112,8 +111,7 @@ struct ResourcesView: View {
                 distance: shelterService.shelters.first(where: { $0.type == .pets })?.distance != nil ? String(format: "%.1f miles", shelterService.shelters.first(where: { $0.type == .pets })!.distance!) : "Locating...",
                 priority: .high
             ),
-            
-            // Support Services (High Priority)
+
             ResourceItem(
                 title: "Mental Health Support",
                 description: "Crisis counseling and mental health services",
@@ -124,8 +122,7 @@ struct ResourcesView: View {
                 distance: nil,
                 priority: .high
             ),
-            
-            // Donations (Medium Priority)
+
             ResourceItem(
                 title: "Red Cross Donations",
                 description: "Support wildfire relief and recovery efforts",
@@ -156,8 +153,7 @@ struct ResourcesView: View {
                 distance: nil,
                 priority: .medium
             ),
-            
-            // Support Services (Medium Priority)
+
             ResourceItem(
                 title: "Insurance Claims",
                 description: "Help with insurance claims and recovery process",
@@ -178,8 +174,7 @@ struct ResourcesView: View {
                 distance: nil,
                 priority: .medium
             ),
-            
-            // Information (Low Priority)
+
             ResourceItem(
                 title: "Air Quality Index",
                 description: "Check current air quality conditions",
@@ -212,8 +207,7 @@ struct ResourcesView: View {
             )
         ]
     }
-    
-    // Convert EmergencyShelter to legacy Shelter format for compatibility
+
     var shelters: [Shelter] {
         return shelterService.shelters.map { emergencyShelter in
             Shelter(
@@ -225,19 +219,18 @@ struct ResourcesView: View {
             )
         }
     }
-    
+
     var filteredResources: [ResourceItem] {
         let filtered = resources.filter { resource in
-            let matchesSearch = searchText.isEmpty || 
+            let matchesSearch = searchText.isEmpty ||
                 resource.title.localizedCaseInsensitiveContains(searchText) ||
                 resource.description.localizedCaseInsensitiveContains(searchText)
-            
+
             let matchesCategory = selectedCategory == .all || resource.category == selectedCategory
-            
+
             return matchesSearch && matchesCategory
         }
-        
-        // Sort by priority (critical first) then by title
+
         return filtered.sorted { lhs, rhs in
             if lhs.priority.rawValue != rhs.priority.rawValue {
                 return lhs.priority.rawValue < rhs.priority.rawValue
@@ -245,31 +238,27 @@ struct ResourcesView: View {
             return lhs.title < rhs.title
         }
     }
-    
+
     var body: some View {
         NavigationView {
             ZStack {
-                // Unified app background
+
                 Color.appGradientBackground
                     .ignoresSafeArea()
-                
+
                 VStack(spacing: 0) {
-                    // Modern Header
+
                     headerView
-                    
-                    // Search and Filters
+
                     searchAndFilterView
-                    
-                    // Content
+
                     ScrollView {
                         LazyVStack(spacing: 12) {
-                            // Emergency Quick Actions (Always visible)
+
                             emergencyActionsView
-                            
-                            // Resources Section
+
                             resourcesSection
-                            
-                            // Nearby Shelters Section (if available)
+
                             if !shelters.isEmpty {
                                 sheltersSection
                             }
@@ -286,26 +275,25 @@ struct ResourcesView: View {
             ShelterDetailView(shelter: shelter)
         }
         .onAppear {
-            // Fetch shelters with sample location
+
             let sample = CLLocation(latitude: 34.0522, longitude: -118.2437)
             shelterService.fetchNearbyShelters(userLocation: sample)
         }
     }
-    
+
     private var headerView: some View {
         HStack {
             Text("Resources")
                 .font(.appTitle)
                 .foregroundColor(.wsOrange)
-            
+
             Spacer()
-            
-            // Simple icon
+
             ZStack {
                 Circle()
                     .fill(Color.appGradientPrimary)
                     .frame(width: 40, height: 40)
-                
+
                 Image(systemName: "heart.circle.fill")
                     .font(.system(size: 20, weight: .semibold))
                     .foregroundColor(.white)
@@ -315,25 +303,25 @@ struct ResourcesView: View {
         .padding(.top, 16)
         .padding(.bottom, 12)
     }
-    
+
     private var searchAndFilterView: some View {
         VStack(spacing: 16) {
-            // Centered Search Bar
+
             HStack {
                 Spacer()
-                
+
                 HStack(spacing: 12) {
                     Image(systemName: "magnifyingglass")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.appTextSecondary)
-                    
+
                     TextField("Search resources...", text: $searchText)
                         .font(.appCaption)
                         .foregroundColor(.appTextPrimary)
                         .autocorrectionDisabled()
-                    
+
                     if !searchText.isEmpty {
-                        Button(action: { 
+                        Button(action: {
                             withAnimation(.appEaseOut) {
                                 searchText = ""
                             }
@@ -353,11 +341,10 @@ struct ResourcesView: View {
                         .stroke(Color.appBorder.opacity(0.3), lineWidth: 1)
                 )
                 .cornerRadius(18)
-                
+
                 Spacer()
             }
-            
-            // Category Filter Pills
+
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
                     ForEach(ResourceCategory.allCases, id: \.self) { category in
@@ -376,21 +363,21 @@ struct ResourcesView: View {
         }
         .padding(.bottom, 8)
     }
-    
+
     private var emergencyActionsView: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.appError)
-                
+
                 Text("Emergency Actions")
                     .font(.appCaption)
                     .foregroundColor(.appTextPrimary)
-                
+
                 Spacer()
             }
-            
+
             HStack(spacing: 8) {
                 MiniEmergencyButton(
                     title: "911",
@@ -402,7 +389,7 @@ struct ResourcesView: View {
                         UIApplication.shared.open(url)
                     }
                 }
-                
+
                 MiniEmergencyButton(
                     title: "988",
                     subtitle: "Crisis Line",
@@ -413,7 +400,7 @@ struct ResourcesView: View {
                         UIApplication.shared.open(url)
                     }
                 }
-                
+
                 MiniEmergencyButton(
                     title: "Fire Dept",
                     subtitle: "Local",
@@ -429,16 +416,16 @@ struct ResourcesView: View {
         .padding(12)
         .appCardStyle()
     }
-    
+
     private var resourcesSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Text("Resources")
                     .font(.appHeadline)
                     .foregroundColor(.appTextPrimary)
-                
+
                 Spacer()
-                
+
                 if selectedCategory != .all {
                     Button(action: {
                         withAnimation(.appSpring) {
@@ -451,7 +438,7 @@ struct ResourcesView: View {
                     }
                 }
             }
-            
+
             if filteredResources.isEmpty {
                 ResourceEmptyStateView(
                     icon: "magnifyingglass",
@@ -467,18 +454,18 @@ struct ResourcesView: View {
                         MiniResourceCard(resource: resource)
                     }
                 }
-                
+
                 if filteredResources.count > 6 {
                     Button(action: {
-                        // Could expand to show all resources
+
                     }) {
                         HStack {
                             Text("View \(filteredResources.count - 6) more resources")
                                 .font(.appCaption)
                                 .foregroundColor(.appPrimary)
-                            
+
                             Spacer()
-                            
+
                             Image(systemName: "chevron.right")
                                 .font(.appSmall)
                                 .foregroundColor(.appPrimary)
@@ -493,27 +480,27 @@ struct ResourcesView: View {
             }
         }
     }
-    
+
     private var sheltersSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "house.fill")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(.appInfo)
-                
+
                 Text("Nearby Shelters")
                     .font(.appSubheadline)
                     .foregroundColor(.appTextPrimary)
-                
+
                 Spacer()
-                
+
                 if let lastUpdated = shelterService.lastUpdated {
                     Text("Updated \(timeAgoString(from: lastUpdated))")
                         .font(.appSmall)
                         .foregroundColor(.appTextTertiary)
                 }
             }
-            
+
             if shelterService.isLoading {
                 LoadingView(message: "Finding shelters...")
             } else if shelters.isEmpty {
@@ -528,18 +515,18 @@ struct ResourcesView: View {
                             selectedShelter = shelter
                         }
                     }
-                    
+
                     if shelters.count > 3 {
                         Button(action: {
-                            // Could show map or expanded list
+
                         }) {
                             HStack {
                                 Text("View \(shelters.count - 3) more shelters")
                                     .font(.appCaption)
                                     .foregroundColor(.appPrimary)
-                                
+
                                 Spacer()
-                                
+
                                 Image(systemName: "chevron.right")
                                     .font(.appSmall)
                                     .foregroundColor(.appPrimary)
@@ -552,7 +539,7 @@ struct ResourcesView: View {
                     }
                 }
             }
-            
+
             if let errorMessage = shelterService.errorMessage {
                 ErrorView(message: errorMessage)
             }
@@ -560,7 +547,7 @@ struct ResourcesView: View {
         .padding(16)
         .appCardStyle()
     }
-    
+
     private func timeAgoString(from date: Date) -> String {
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .abbreviated
@@ -568,19 +555,17 @@ struct ResourcesView: View {
     }
 }
 
-// MARK: - Modern Component Views
-
 struct CompactStatView: View {
     let value: String
     let label: String
     let color: Color
-    
+
     var body: some View {
         VStack(alignment: .center, spacing: 1) {
             Text(value)
                 .font(.system(size: 16, weight: .bold, design: .rounded))
                 .foregroundColor(color)
-            
+
             Text(label)
                 .font(.system(size: 10, weight: .medium))
                 .foregroundColor(.appTextSecondary)
@@ -592,13 +577,13 @@ struct CategoryPill: View {
     let category: ResourceCategory
     let isSelected: Bool
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             HStack(spacing: 6) {
                 Image(systemName: category.icon)
                     .font(.system(size: 12, weight: .medium))
-                
+
                 Text(category.rawValue)
                     .font(.appCaption)
                     .fontWeight(.medium)
@@ -622,7 +607,7 @@ struct MiniEmergencyButton: View {
     let icon: String
     let color: Color
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             VStack(spacing: 4) {
@@ -630,17 +615,17 @@ struct MiniEmergencyButton: View {
                     Circle()
                         .fill(color.opacity(0.2))
                         .frame(width: 24, height: 24)
-                    
+
                     Image(systemName: icon)
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundColor(color)
                 }
-                
+
                 VStack(spacing: 1) {
                     Text(title)
                         .font(.system(size: 11, weight: .semibold))
                         .foregroundColor(.appTextPrimary)
-                    
+
                     Text(subtitle)
                         .font(.system(size: 9))
                         .foregroundColor(.appTextSecondary)
@@ -659,7 +644,7 @@ struct MiniEmergencyButton: View {
 
 struct MiniResourceCard: View {
     let resource: ResourceItem
-    
+
     private var priorityColor: Color {
         switch resource.priority {
         case .critical: return .appError
@@ -668,7 +653,7 @@ struct MiniResourceCard: View {
         case .low: return .appTextSecondary
         }
     }
-    
+
     var body: some View {
         Button(action: {
             if let url = resource.url, let urlObj = URL(string: url) {
@@ -678,20 +663,20 @@ struct MiniResourceCard: View {
             }
         }) {
             VStack(alignment: .leading, spacing: 6) {
-                // Top row with icon and distance
+
                 HStack {
                     ZStack {
                         Circle()
                             .fill(priorityColor.opacity(0.2))
                             .frame(width: 22, height: 22)
-                        
+
                         Image(systemName: resource.icon)
                             .font(.system(size: 10, weight: .semibold))
                             .foregroundColor(priorityColor)
                     }
-                    
+
                     Spacer()
-                    
+
                     if let distance = resource.distance {
                         Text(distance)
                             .font(.system(size: 9, weight: .medium))
@@ -702,25 +687,23 @@ struct MiniResourceCard: View {
                             .cornerRadius(3)
                     }
                 }
-                
-                // Title and description
+
                 VStack(alignment: .leading, spacing: 3) {
                     Text(resource.title)
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundColor(.appTextPrimary)
                         .multilineTextAlignment(.leading)
                         .lineLimit(1)
-                    
+
                     Text(resource.description)
                         .font(.system(size: 10))
                         .foregroundColor(.appTextSecondary)
                         .multilineTextAlignment(.leading)
                         .lineLimit(2)
                 }
-                
+
                 Spacer()
-                
-                // Bottom row with action tags
+
                 HStack(spacing: 4) {
                     if resource.phone != nil {
                         MiniActionTag(text: "Call", icon: "phone.fill")
@@ -728,9 +711,9 @@ struct MiniResourceCard: View {
                     if resource.url != nil {
                         MiniActionTag(text: "Visit", icon: "safari.fill")
                     }
-                    
+
                     Spacer()
-                    
+
                     Image(systemName: "arrow.up.right")
                         .font(.system(size: 8))
                         .foregroundColor(.appPrimary)
@@ -747,12 +730,12 @@ struct MiniResourceCard: View {
 struct MiniActionTag: View {
     let text: String
     let icon: String
-    
+
     var body: some View {
         HStack(spacing: 2) {
             Image(systemName: icon)
                 .font(.system(size: 7, weight: .medium))
-            
+
             Text(text)
                 .font(.system(size: 8, weight: .medium))
         }
@@ -767,7 +750,7 @@ struct MiniActionTag: View {
 struct MiniShelterCard: View {
     let shelter: Shelter
     let onTap: () -> Void
-    
+
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 8) {
@@ -775,34 +758,34 @@ struct MiniShelterCard: View {
                     Circle()
                         .fill(Color.appInfo.opacity(0.2))
                         .frame(width: 24, height: 24)
-                    
+
                     Image(systemName: "house.fill")
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundColor(.appInfo)
                 }
-                
+
                 VStack(alignment: .leading, spacing: 2) {
                     Text(shelter.name)
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundColor(.appTextPrimary)
                         .multilineTextAlignment(.leading)
                         .lineLimit(1)
-                    
+
                     Text(shelter.address)
                         .font(.system(size: 10))
                         .foregroundColor(.appTextSecondary)
                         .lineLimit(1)
-                    
+
                     HStack(spacing: 4) {
                         MiniStatusBadge(text: shelter.status, color: .appSuccess)
                         MiniStatusBadge(text: shelter.capacity, color: .appInfo)
-                        
+
                         Spacer()
                     }
                 }
-                
+
                 Spacer()
-                
+
                 Image(systemName: "chevron.right")
                     .font(.system(size: 8))
                     .foregroundColor(.appTextTertiary)
@@ -819,7 +802,7 @@ struct MiniShelterCard: View {
 struct MiniStatusBadge: View {
     let text: String
     let color: Color
-    
+
     var body: some View {
         Text(text)
             .font(.system(size: 8, weight: .medium))
@@ -831,24 +814,22 @@ struct MiniStatusBadge: View {
     }
 }
 
-// MARK: - Utility Views
-
 struct ResourceEmptyStateView: View {
     let icon: String
     let title: String
     let message: String
-    
+
     var body: some View {
         VStack(spacing: 16) {
             Image(systemName: icon)
                 .font(.system(size: 40))
                 .foregroundColor(.appTextTertiary)
-            
+
             VStack(spacing: 8) {
                 Text(title)
                     .font(.appHeadline)
                     .foregroundColor(.appTextPrimary)
-                
+
                 Text(message)
                     .font(.appCaption)
                     .foregroundColor(.appTextSecondary)
@@ -863,17 +844,17 @@ struct ResourceEmptyStateView: View {
 struct CompactEmptyStateView: View {
     let icon: String
     let title: String
-    
+
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.system(size: 16))
                 .foregroundColor(.appTextTertiary)
-            
+
             Text(title)
                 .font(.appCaption)
                 .foregroundColor(.appTextSecondary)
-            
+
             Spacer()
         }
         .padding(.vertical, 12)
@@ -882,17 +863,17 @@ struct CompactEmptyStateView: View {
 
 struct LoadingView: View {
     let message: String
-    
+
     var body: some View {
         HStack(spacing: 16) {
             ProgressView()
                 .scaleEffect(0.8)
                 .tint(.appPrimary)
-            
+
             Text(message)
                 .font(.appCaption)
                 .foregroundColor(.appTextSecondary)
-            
+
             Spacer()
         }
         .padding(.vertical, 20)
@@ -901,17 +882,17 @@ struct LoadingView: View {
 
 struct ErrorView: View {
     let message: String
-    
+
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.appCaption)
                 .foregroundColor(.appWarning)
-            
+
             Text(message)
                 .font(.appCaption)
                 .foregroundColor(.appTextSecondary)
-            
+
             Spacer()
         }
         .padding(16)
@@ -920,43 +901,41 @@ struct ErrorView: View {
     }
 }
 
-// SheltersMapView disabled temporarily
-
 struct ShelterDetailView: View {
     let shelter: Shelter
     @Environment(\.dismiss) private var dismiss
-    
+
     var body: some View {
         NavigationView {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    // Header Section
+
                     VStack(alignment: .leading, spacing: 16) {
                         HStack {
                             ZStack {
                                 Circle()
                                     .fill(Color.appInfo.opacity(0.2))
                                     .frame(width: 60, height: 60)
-                                
+
                                 Image(systemName: "house.fill")
                                     .font(.system(size: 24, weight: .semibold))
                                     .foregroundColor(.appInfo)
                             }
-                            
+
                             Spacer()
-                            
+
                             Button("Done") {
                                 dismiss()
                             }
                             .font(.appCaption)
                             .foregroundColor(.appPrimary)
                         }
-                        
+
                         VStack(alignment: .leading, spacing: 8) {
                             Text(shelter.name)
                                 .font(.appTitle)
                                 .foregroundColor(.appTextPrimary)
-                            
+
                             Text(shelter.address)
                                 .font(.appBody)
                                 .foregroundColor(.appTextSecondary)
@@ -964,13 +943,12 @@ struct ShelterDetailView: View {
                     }
                     .padding(20)
                     .appCardStyle()
-                    
-                    // Status & Info Section
+
                     VStack(alignment: .leading, spacing: 16) {
                         Text("Shelter Information")
                             .font(.appHeadline)
                             .foregroundColor(.appTextPrimary)
-                        
+
                         VStack(spacing: 12) {
                             ResourceInfoRow(
                                 icon: "checkmark.circle.fill",
@@ -978,7 +956,7 @@ struct ShelterDetailView: View {
                                 value: shelter.status,
                                 color: .appSuccess
                             )
-                            
+
                             ResourceInfoRow(
                                 icon: "person.2.fill",
                                 title: "Capacity",
@@ -989,13 +967,12 @@ struct ShelterDetailView: View {
                     }
                     .padding(20)
                     .appCardStyle()
-                    
-                    // Quick Actions Section
+
                     VStack(alignment: .leading, spacing: 16) {
                         Text("Quick Actions")
                             .font(.appHeadline)
                             .foregroundColor(.appTextPrimary)
-                        
+
                         VStack(spacing: 12) {
                             ActionButton(
                                 title: "Call Emergency Services",
@@ -1007,7 +984,7 @@ struct ShelterDetailView: View {
                                     UIApplication.shared.open(url)
                                 }
                             }
-                            
+
                             ActionButton(
                                 title: "Get Directions",
                                 subtitle: "Open in Maps app",
@@ -1024,7 +1001,7 @@ struct ShelterDetailView: View {
                     }
                     .padding(20)
                     .appCardStyle()
-                    
+
                     Spacer(minLength: 40)
                 }
                 .padding(.horizontal, 20)
@@ -1037,32 +1014,30 @@ struct ShelterDetailView: View {
     }
 }
 
-// MARK: - Detail View Components
-
 struct ResourceInfoRow: View {
     let icon: String
     let title: String
     let value: String
     let color: Color
-    
+
     var body: some View {
         HStack(spacing: 16) {
             Image(systemName: icon)
                 .font(.system(size: 16, weight: .semibold))
                 .foregroundColor(color)
                 .frame(width: 24)
-            
+
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.appCaption)
                     .foregroundColor(.appTextSecondary)
-                
+
                 Text(value)
                     .font(.appBody)
                     .fontWeight(.medium)
                     .foregroundColor(.appTextPrimary)
             }
-            
+
             Spacer()
         }
         .padding(.vertical, 8)
@@ -1075,7 +1050,7 @@ struct ActionButton: View {
     let icon: String
     let color: Color
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             HStack(spacing: 16) {
@@ -1083,25 +1058,25 @@ struct ActionButton: View {
                     Circle()
                         .fill(color.opacity(0.2))
                         .frame(width: 44, height: 44)
-                    
+
                     Image(systemName: icon)
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundColor(color)
                 }
-                
+
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
                         .font(.appSubheadline)
                         .fontWeight(.semibold)
                         .foregroundColor(.appTextPrimary)
-                    
+
                     Text(subtitle)
                         .font(.appCaption)
                         .foregroundColor(.appTextSecondary)
                 }
-                
+
                 Spacer()
-                
+
                 Image(systemName: "chevron.right")
                     .font(.appCaption)
                     .foregroundColor(.appTextTertiary)
@@ -1113,8 +1088,6 @@ struct ActionButton: View {
         .buttonStyle(PlainButtonStyle())
     }
 }
-
-
 
 #Preview {
     ResourcesView()

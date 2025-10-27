@@ -10,21 +10,20 @@ struct NotificationSettingsView: View {
     @State private var airQualityAlerts = true
     @State private var periodicChecks = false
     @Environment(\.dismiss) private var dismiss
-    
+
     let darkOrange = Color(red: 0.85, green: 0.33, blue: 0.0)
     let darkRed = Color(red: 0.7, green: 0.13, blue: 0.13)
-    
+
     var body: some View {
         NavigationStack {
             ZStack {
                 Color.black.ignoresSafeArea()
-                
+
                 ScrollView {
                     VStack(spacing: 24) {
-                        // Authorization Status
+
                         authorizationSection
-                        
-                        // Emergency Alerts
+
                         notificationSection(
                             title: "🚨 Emergency Alerts",
                             description: "Critical alerts for immediate danger",
@@ -32,8 +31,7 @@ struct NotificationSettingsView: View {
                             icon: "exclamationmark.triangle.fill",
                             color: .red
                         )
-                        
-                        // Evacuation Alerts
+
                         notificationSection(
                             title: "🏃 Evacuation Alerts",
                             description: "Mandatory evacuation orders",
@@ -41,8 +39,7 @@ struct NotificationSettingsView: View {
                             icon: "person.2.fill",
                             color: .orange
                         )
-                        
-                        // Fire Updates
+
                         notificationSection(
                             title: "🔥 Fire Updates",
                             description: "Containment and fire status updates",
@@ -50,8 +47,7 @@ struct NotificationSettingsView: View {
                             icon: "flame.fill",
                             color: .orange
                         )
-                        
-                        // Weather Alerts
+
                         notificationSection(
                             title: "🌤️ Weather Alerts",
                             description: "Wind, humidity, and weather conditions",
@@ -59,8 +55,7 @@ struct NotificationSettingsView: View {
                             icon: "cloud.sun.fill",
                             color: .blue
                         )
-                        
-                        // Air Quality
+
                         notificationSection(
                             title: "😷 Air Quality Alerts",
                             description: "Air quality index and health warnings",
@@ -68,8 +63,7 @@ struct NotificationSettingsView: View {
                             icon: "lungs.fill",
                             color: .purple
                         )
-                        
-                        // Community Posts
+
                         notificationSection(
                             title: "📢 Community Posts",
                             description: "Updates from community members",
@@ -77,8 +71,7 @@ struct NotificationSettingsView: View {
                             icon: "person.3.fill",
                             color: .green
                         )
-                        
-                        // Periodic Checks
+
                         notificationSection(
                             title: "⏰ Periodic Checks",
                             description: "Regular fire status reminders",
@@ -86,10 +79,9 @@ struct NotificationSettingsView: View {
                             icon: "clock.fill",
                             color: .gray
                         )
-                        
-                        // Test Notifications Button
+
                         testNotificationsButton
-                        
+
                         Spacer()
                     }
                     .padding(20)
@@ -110,27 +102,27 @@ struct NotificationSettingsView: View {
             setupNotificationCategories()
         }
     }
-    
+
     private var authorizationSection: some View {
         VStack(spacing: 16) {
             HStack {
                 Image(systemName: notificationService.isAuthorized ? "checkmark.circle.fill" : "xmark.circle.fill")
                     .foregroundColor(notificationService.isAuthorized ? .green : .red)
                     .font(.title2)
-                
+
                 VStack(alignment: .leading, spacing: 4) {
                     Text(notificationService.isAuthorized ? "Notifications Enabled" : "Notifications Disabled")
                         .font(.headline)
                         .foregroundColor(.white)
-                    
+
                     Text(notificationService.isAuthorized ? "You'll receive important alerts" : "Enable notifications for emergency alerts")
                         .font(.caption)
                         .foregroundColor(.gray)
                 }
-                
+
                 Spacer()
             }
-            
+
             if !notificationService.isAuthorized {
                 Button("Enable Notifications") {
                     Task {
@@ -148,7 +140,7 @@ struct NotificationSettingsView: View {
         .background(Color.gray.opacity(0.1))
         .cornerRadius(12)
     }
-    
+
     private func notificationSection(
         title: String,
         description: String,
@@ -161,19 +153,19 @@ struct NotificationSettingsView: View {
                 Image(systemName: icon)
                     .foregroundColor(color)
                     .font(.title2)
-                
+
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
                         .font(.headline)
                         .foregroundColor(.white)
-                    
+
                     Text(description)
                         .font(.caption)
                         .foregroundColor(.gray)
                 }
-                
+
                 Spacer()
-                
+
                 Toggle("", isOn: isEnabled)
                     .toggleStyle(SwitchToggleStyle(tint: darkOrange))
             }
@@ -182,18 +174,18 @@ struct NotificationSettingsView: View {
         .background(Color.gray.opacity(0.1))
         .cornerRadius(12)
     }
-    
+
     private var testNotificationsButton: some View {
         VStack(spacing: 16) {
             Text("Test Notifications")
                 .font(.headline)
                 .foregroundColor(.white)
-            
+
             Text("Send a test notification to verify your settings")
                 .font(.caption)
                 .foregroundColor(.gray)
                 .multilineTextAlignment(.center)
-            
+
             Button("Send Test Alert") {
                 sendTestNotification()
             }
@@ -207,11 +199,11 @@ struct NotificationSettingsView: View {
         .background(Color.gray.opacity(0.1))
         .cornerRadius(12)
     }
-    
+
     private func setupNotificationCategories() {
         notificationService.setupNotificationCategories()
     }
-    
+
     private func sendTestNotification() {
         notificationService.scheduleEmergencyAlert(
             title: "🧪 Test Alert",
@@ -223,4 +215,4 @@ struct NotificationSettingsView: View {
 
 #Preview {
     NotificationSettingsView()
-} 
+}

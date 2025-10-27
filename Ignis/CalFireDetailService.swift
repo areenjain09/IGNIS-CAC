@@ -7,7 +7,7 @@ struct CalFireIncidentDetail: Codable {
     var temporaryEvacuationPoints: [String]?
     var resourcesAssigned: [String]?
     var damageAssessment: [String]?
-    // Structured data for exact format
+
     var resourcesMetrics: [ResourceMetric]?
     var damageMetrics: [ResourceMetric]?
     var sheltersStructured: [ShelterInfo]?
@@ -16,30 +16,30 @@ struct CalFireIncidentDetail: Codable {
 }
 
 struct ResourceMetric: Codable, Hashable {
-    let value: String  // "3,685"
-    let label: String  // "Personnel"
+    let value: String
+    let label: String
 }
 
 struct ShelterInfo: Codable, Hashable {
-    let name: String     // "Arroyo Grande High School"
-    let address: String? // "495 Valley Rd., Arroyo Grande"
-    let note: String?    // "For sheltering assistance, call..."
+    let name: String
+    let address: String?
+    let note: String?
 }
 
 struct TEPInfo: Codable, Hashable {
-    let name: String     // "Benjamin Foxen Elementary School"
-    let address: String? // "4949 Foxen Canyon Rd,\nSanta Maria, CA 93454"
-    let hours: String?   // "Hours of Operation: Monday, August 3..."
+    let name: String
+    let address: String?
+    let hours: String?
 }
 
 final class CalFireDetailService: ObservableObject {
     static let shared = CalFireDetailService()
 
-    @Published private(set) var cache: [String: CalFireIncidentDetail] = [:] // key: incident URL
+    @Published private(set) var cache: [String: CalFireIncidentDetail] = [:]
     @Published private(set) var isRefreshing: Bool = false
 
     private var timer: Timer?
-    private let refreshInterval: TimeInterval = 3 * 60 * 60 // 3 hours
+    private let refreshInterval: TimeInterval = 3 * 60 * 60
 
     private init() {
         startPeriodicRefresh()
@@ -58,7 +58,7 @@ final class CalFireDetailService: ObservableObject {
     }
 
     func details(for urlString: String) async -> CalFireIncidentDetail? {
-        // Return cached if < 3 hours old
+
         if let d = cache[urlString], Date().timeIntervalSince(d.lastUpdated) < refreshInterval {
             return d
         }
@@ -88,7 +88,6 @@ final class CalFireDetailService: ObservableObject {
         for key in cache.keys { _ = await fetchAndCache(urlString: key) }
     }
 
-    // Very lightweight parser that strips tags and extracts text between known headings
     private func parseDetailHTML(_ html: String) -> CalFireIncidentDetail {
         let cleaned = html
             .replacingOccurrences(of: "<[^>]+>", with: "\n", options: .regularExpression)
@@ -97,23 +96,23 @@ final class CalFireDetailService: ObservableObject {
         let normalized = cleaned
             .replacingOccurrences(of: "\n+", with: "\n", options: .regularExpression)
         func section(_ titles: [String]) -> String? {
-            // Find any title; grab text until the next title among our full set
+
             let allTitles = [
                 "Road Closures", "Evacuation Shelters", "Animal Evacuation Shelters",
                 "Temporary Evacuation Points", "Resources Assigned", "Damage Assessment",
                 "Evacuation Orders", "Evacuation Warnings",
-                // Common site headings and nav we do NOT want
+
                 "Quick Links", "About Us", "Current Incidents", "Incidents", "Defensible Space",
                 "Resources", "Statistics", "Subscribe to Newsletter", "Contact", "Social Media",
                 "Map Legend", "Legend", "Situation Summary", "Incident Update", "News Update"
             ]
-            // indices
+
             var startIdx: String.Index? = nil
             for t in titles {
                 if let r = normalized.range(of: t, options: [.caseInsensitive]) { startIdx = r.upperBound; break }
             }
             guard let start = startIdx else { return nil }
-            // find next header
+
             var end = normalized.endIndex
             for t in allTitles {
                 if let r = normalized.range(of: t, options: [.caseInsensitive], range: start..<normalized.endIndex) {
@@ -133,7 +132,7 @@ final class CalFireDetailService: ObservableObject {
                     .trimmingCharacters(in: .whitespacesAndNewlines)
                 if s.count > 2 { parts.append(s) }
             }
-            // Deduplicate while preserving order
+
             var seen = Set<String>()
             let unique = parts.filter { if seen.contains($0.lowercased()) { return false } else { seen.insert($0.lowercased()); return true } }
             return unique.isEmpty ? nil : unique
@@ -142,7 +141,7 @@ final class CalFireDetailService: ObservableObject {
         enum Section { case road, shelters, animal, tep, resources, damage }
         func filterItems(_ items: [String]?, for section: Section) -> [String]? {
             guard var items = items else { return nil }
-            // Generic noise filters
+
             let blacklistSubstrings = ["gaq", "analytics", "function", "push(", "UA-", "script", "cookie", "privacy", "subscribe", "newsletter", "Quick Links", "About Us", "Map Legend", "Legend", "Icon", "Description", "Lightning Activity"]
             items.removeAll { s in
                 let lower = s.lowercased()
@@ -151,7 +150,7 @@ final class CalFireDetailService: ObservableObject {
                 if blacklistSubstrings.contains(where: { lower.contains($0.lowercased()) }) { return true }
                 return false
             }
-            // Section-specific filters
+
             switch section {
             case .road:
                 items = items.filter { s in
@@ -184,13 +183,12 @@ final class CalFireDetailService: ObservableObject {
                     return keywords.contains(where: { l.contains($0) })
                 }
             }
-            // Limit length and trim
+
             items = items.map { String($0.prefix(220)) }
-            // Compact to metrics/names only
+
             return compact(items: items, for: section)
         }
 
-        // Build compact, numeric-forward strings per section
         func compact(items: [String], for section: Section) -> [String]? {
             var out: [String] = []
             let numberRegex = try? NSRegularExpression(pattern: "\\d{1,4}")
@@ -231,16 +229,15 @@ final class CalFireDetailService: ObservableObject {
                 }
                 out = mapping.compactMap { if let n = best[$0.label] { return "\($0.label): \(n)" } else { return nil } }
             case .road:
-                // Extract full road closure descriptions like the Gifford Fire example
+
                 for line in items {
                     let l = line.trimmingCharacters(in: .whitespacesAndNewlines)
                     let lower = l.lowercased()
-                    
-                    // Must contain road/highway names AND closure/restriction info
-                    if (lower.contains("highway") || lower.contains("road") || lower.contains("street") || 
-                        lower.contains("avenue") || lower.contains("boulevard") || lower.contains("lane") || 
-                        lower.contains("drive") || lower.contains("pozo") || lower.contains("lopez") || 
-                        lower.contains("huasna") || lower.contains("sr-") || lower.contains("hwy")) && 
+
+                    if (lower.contains("highway") || lower.contains("road") || lower.contains("street") ||
+                        lower.contains("avenue") || lower.contains("boulevard") || lower.contains("lane") ||
+                        lower.contains("drive") || lower.contains("pozo") || lower.contains("lopez") ||
+                        lower.contains("huasna") || lower.contains("sr-") || lower.contains("hwy")) &&
                        (lower.contains("closed") || lower.contains("restricted") || lower.contains("residents") ||
                         lower.contains("essential traffic")) &&
                        l.count > 20 && l.count < 200 {
@@ -269,30 +266,29 @@ final class CalFireDetailService: ObservableObject {
                     }
                 }
             }
-            // Deduplicate, cap results, return
+
             var seen = Set<String>()
             let compacted = out.filter { if seen.contains($0.lowercased()) { return false } else { seen.insert($0.lowercased()); return true } }
             return compacted.isEmpty ? nil : Array(compacted.prefix(10))
         }
 
-        // Parse Resources Assigned - extract number + label pairs
         func parseResources(from text: String?) -> [ResourceMetric]? {
             guard let text = text else { return nil }
             let lines = text.components(separatedBy: CharacterSet.newlines)
                 .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
                 .filter { !$0.isEmpty }
-            
+
             var metrics: [ResourceMetric] = []
             var i = 0
-            
+
             while i < lines.count {
                 let line = lines[i]
-                // Look for standalone numbers
+
                 if let number = Int(line.replacingOccurrences(of: ",", with: "")) {
-                    // Next line should be the label
+
                     if i + 1 < lines.count {
                         let label = lines[i + 1]
-                        // Skip generic words
+
                         if !["assigned", "resources", "total", "other"].contains(label.lowercased()) {
                             metrics.append(ResourceMetric(value: line, label: label))
                         }
@@ -304,25 +300,24 @@ final class CalFireDetailService: ObservableObject {
                     i += 1
                 }
             }
-            
+
             return metrics.isEmpty ? nil : metrics
         }
-        
-        // Parse Damage Assessment - similar pattern
+
         func parseDamage(from text: String?) -> [ResourceMetric]? {
             guard let text = text else { return nil }
             let lines = text.components(separatedBy: CharacterSet.newlines)
                 .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
                 .filter { !$0.isEmpty }
-            
+
             var metrics: [ResourceMetric] = []
             var i = 0
-            
+
             while i < lines.count {
                 let line = lines[i]
-                // Look for standalone numbers
+
                 if let number = Int(line.replacingOccurrences(of: ",", with: "")) {
-                    // Next line should be the label
+
                     if i + 1 < lines.count {
                         let label = lines[i + 1]
                         metrics.append(ResourceMetric(value: line, label: label))
@@ -334,44 +329,40 @@ final class CalFireDetailService: ObservableObject {
                     i += 1
                 }
             }
-            
+
             return metrics.isEmpty ? nil : metrics
         }
 
-        // Parse shelter locations with exact format
         func parseShelters(from text: String?) -> [ShelterInfo]? {
             guard let text = text else { return nil }
             let lines = text.components(separatedBy: CharacterSet.newlines)
                 .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
                 .filter { !$0.isEmpty }
-            
+
             var shelters: [ShelterInfo] = []
             var currentName: String? = nil
             var currentAddress: String? = nil
             var currentNote: String? = nil
-            
+
             for line in lines {
                 let lower = line.lowercased()
-                
-                // Skip headers and generic lines
+
                 if lower.contains("evacuation shelter") && !lower.contains("school") && !lower.contains("center") {
                     continue
                 }
                 if lower.contains("evacuation") && lower.contains("shelter") && line.count < 40 {
                     continue
                 }
-                
-                // Phone/assistance lines - be very specific to avoid extra info
+
                 if (lower.contains("for sheltering assistance") || lower.contains("please call")) &&
                    (lower.contains("red cross") || lower.contains("assistance")) &&
                    line.count < 150 {
                     currentNote = line
                     continue
                 }
-                
-                // Address pattern: must have number + street type, not just any number
-                if line.range(of: "\\d+", options: .regularExpression) != nil && 
-                   (lower.contains(" rd.") || lower.contains(" rd,") || lower.contains(" road") || 
+
+                if line.range(of: "\\d+", options: .regularExpression) != nil &&
+                   (lower.contains(" rd.") || lower.contains(" rd,") || lower.contains(" road") ||
                     lower.contains(" st.") || lower.contains(" st,") || lower.contains(" street") ||
                     lower.contains(" ave.") || lower.contains(" ave,") || lower.contains(" avenue") ||
                     lower.contains(" dr.") || lower.contains(" dr,") || lower.contains(" drive") ||
@@ -379,14 +370,13 @@ final class CalFireDetailService: ObservableObject {
                     currentAddress = line
                     continue
                 }
-                
-                // School/facility names - be very specific and avoid extra info
+
                 if ((lower.contains("school") && !lower.contains("district") && !lower.contains("office") && !lower.contains("road")) ||
                     (lower.contains("center") && !lower.contains("information") && !lower.contains("resource") && !lower.contains("community information")) ||
                     lower.contains("hall")) &&
                    line.count > 15 && line.count < 80 &&
                    !lower.contains("hours") && !lower.contains("operation") && !lower.contains("monday") {
-                    // Save previous if exists
+
                     if let name = currentName {
                         shelters.append(ShelterInfo(name: name, address: currentAddress, note: currentNote))
                     }
@@ -395,42 +385,37 @@ final class CalFireDetailService: ObservableObject {
                     currentNote = nil
                 }
             }
-            
-            // Save last one
+
             if let name = currentName {
                 shelters.append(ShelterInfo(name: name, address: currentAddress, note: currentNote))
             }
-            
+
             return shelters.isEmpty ? nil : shelters
         }
-        
-        // Parse TEPs with hours
+
         func parseTEPs(from text: String?) -> [TEPInfo]? {
             guard let text = text else { return nil }
             let lines = text.components(separatedBy: CharacterSet.newlines)
                 .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
                 .filter { !$0.isEmpty }
-            
+
             var teps: [TEPInfo] = []
             var currentName: String? = nil
             var currentAddress: String? = nil
             var currentHours: String? = nil
-            
+
             for line in lines {
                 let lower = line.lowercased()
-                
-                // Skip headers
+
                 if lower.contains("temporary evacuation point") && !lower.contains("school") && !lower.contains("center") {
                     continue
                 }
-                
-                // Hours pattern
+
                 if lower.contains("hours of operation") {
                     currentHours = line
                     continue
                 }
-                
-                // Address with state/zip
+
                 if line.contains(",") && (line.contains("CA") || line.range(of: "\\d{5}", options: .regularExpression) != nil) {
                     if currentAddress == nil {
                         currentAddress = line
@@ -439,23 +424,21 @@ final class CalFireDetailService: ObservableObject {
                     }
                     continue
                 }
-                
-                // Street address
-                if line.range(of: "\\d+", options: .regularExpression) != nil && 
-                   (lower.contains(" rd") || lower.contains(" road") || lower.contains(" st") || 
+
+                if line.range(of: "\\d+", options: .regularExpression) != nil &&
+                   (lower.contains(" rd") || lower.contains(" road") || lower.contains(" st") ||
                     lower.contains(" ave") || lower.contains(" dr") || lower.contains(" way") || lower.contains("highway")) {
                     currentAddress = line
                     continue
                 }
-                
-                // Facility names
+
                 if (lower.contains("school") || lower.contains("center")) &&
                    !lower.contains("district") && !lower.contains("office") {
-                    // Save previous if exists
+
                     if let name = currentName {
                         teps.append(TEPInfo(name: name, address: currentAddress, hours: currentHours))
                     }
-                    // Clean up the name by removing "and Community Information Center" and HTML entities
+
                     let cleanedName = line
                         .replacingOccurrences(of: " and Community Information Center", with: "", options: .caseInsensitive)
                         .replacingOccurrences(of: " & Community Information Center", with: "", options: .caseInsensitive)
@@ -466,25 +449,23 @@ final class CalFireDetailService: ObservableObject {
                         .replacingOccurrences(of: "&amp;", with: "&")
                         .replacingOccurrences(of: "&nbsp;", with: " ")
                         .trimmingCharacters(in: .whitespacesAndNewlines)
-                    
-                    // Skip if the cleaned name is too short or contains unwanted keywords
-                    if cleanedName.count < 3 || 
+
+                    if cleanedName.count < 3 ||
                        cleanedName.lowercased().contains("community information") ||
                        cleanedName.lowercased().contains("resource center") {
                         continue
                     }
-                    
+
                     currentName = cleanedName
                     currentAddress = nil
                     currentHours = nil
                 }
             }
-            
-            // Save last one
+
             if let name = currentName {
                 teps.append(TEPInfo(name: name, address: currentAddress, hours: currentHours))
             }
-            
+
             return teps.isEmpty ? nil : teps
         }
 
@@ -509,4 +490,3 @@ final class CalFireDetailService: ObservableObject {
         return detail
     }
 }
-

@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct HomePageView: View {
-    // MARK: - State Variables
+
     @StateObject private var fireDataService = FireDataService.shared
     @StateObject private var locationManager = LocationManager.shared
     @StateObject private var newsService = FireNewsService.shared
@@ -15,19 +15,16 @@ struct HomePageView: View {
     @State private var titleGlow = false
     @State private var titleRotation = false
 
-    // Dynamic fire data
     @State private var activeFiresCount: Int = 0
     @State private var evacuationAlerts: Int = 0
     @State private var lastUpdated = "2 min ago"
-    
-    // Live news driven by service
+
     private var latestNewsFromService: [FireNews] { Array(newsService.items.prefix(3)) }
-    
-    // Dynamic fire risk calculation using FireDataService
+
     private var fireRiskLevel: String {
         let activeFires = fireDataService.calFireIncidents.filter { $0.isActive }
         let totalAcres = activeFires.reduce(0) { $0 + $1.acresBurned }
-        
+
         if totalAcres > 50000 || activeFires.count > 15 {
             return "Critical"
         } else if totalAcres > 20000 || activeFires.count > 10 {
@@ -38,14 +35,13 @@ struct HomePageView: View {
             return "Low"
         }
     }
-    
-    // MARK: - Main Body
+
     var body: some View {
         ZStack {
-            // Unified app background gradient
+
             Color.appGradientBackground
                 .ignoresSafeArea()
-            
+
             ScrollView {
                 LazyVStack(spacing: 32) {
                     headerSection
@@ -63,19 +59,16 @@ struct HomePageView: View {
                 showConfetti = true
                 fireDataService.start()
                 newsService.startPeriodicUpdates()
-                
-                // Update dynamic data
+
                 updateDynamicData()
-                
-                // Staggered animations
+
                 withAnimation(.easeOut(duration: 0.8).delay(0.2)) {
                     animateHeader = true
                 }
                 withAnimation(.easeOut(duration: 0.8).delay(0.4)) {
                     animateCards = true
                 }
-                
-                // Title animations - only play once
+
                 withAnimation(.easeInOut(duration: 2.0)) {
                     titleGlow = true
                 }
@@ -85,7 +78,7 @@ struct HomePageView: View {
             }
         }
         .onChange(of: fireDataService.calFireIncidents) { _, _ in
-            // Update counts when fire data changes
+
             updateDynamicData()
         }
         .onChange(of: navigateToTab) { _, newTab in
@@ -99,15 +92,14 @@ struct HomePageView: View {
             }
         }
     }
-    
-    // MARK: - Header Section - Dynamic Design
+
     var headerSection: some View {
         VStack(alignment: .leading, spacing: 20) {
             HStack {
                 VStack(alignment: .leading, spacing: 8) {
-                    // Dynamic Ignis title
+
                     ZStack {
-                        // Glow effect
+
                         Text("Ignis")
                             .font(.system(size: 48, weight: .bold, design: .rounded))
                             .foregroundStyle(
@@ -122,14 +114,12 @@ struct HomePageView: View {
                             )
                             .blur(radius: titleGlow ? 8 : 4)
                             .scaleEffect(titleGlow ? 1.1 : 1.0)
-                        
-                        // Main title
+
                         Text("Ignis")
                             .font(.system(size: 48, weight: .bold, design: .rounded))
                             .foregroundStyle(Color.appGradientPrimary)
                             .shadow(color: Color.appPrimary.opacity(0.6), radius: titleGlow ? 12 : 6)
-                        
-                        // Animated particles around title - fade out and disappear
+
                         ForEach(0..<6, id: \.self) { index in
                             Circle()
                                 .fill(Color.appGradientPrimary)
@@ -148,7 +138,7 @@ struct HomePageView: View {
                         .degrees(titleRotation ? 2 : -2),
                         axis: (x: 0, y: 1, z: 0)
                     )
-                    
+
                     Text("Wildfire Safety")
                         .font(.appSubheadline)
                         .foregroundColor(.appTextSecondary)
@@ -156,8 +146,7 @@ struct HomePageView: View {
                         .offset(x: animateHeader ? 0 : -20)
                 }
                 Spacer()
-                
-                // Simple circular location button
+
                 Button(action: {
                     locationManager.requestLocationPermission()
                 }) {
@@ -166,7 +155,7 @@ struct HomePageView: View {
                             .fill(Color.appGradientPrimary)
                             .frame(width: 50, height: 50)
                             .shadow(color: Color.appPrimary.opacity(0.4), radius: 8, x: 0, y: 4)
-                        
+
                         Image(systemName: locationManager.authorizationStatus == .authorizedWhenInUse ? "location.fill" : "location")
                             .font(.system(size: 20, weight: .semibold))
                             .foregroundColor(.white)
@@ -175,8 +164,7 @@ struct HomePageView: View {
                 .scaleEffect(animateHeader ? 1.0 : 0.8)
                 .opacity(animateHeader ? 1.0 : 0.0)
             }
-            
-            // Simple status indicators
+
             HStack(spacing: 12) {
                 StatusIndicator(title: "Fire Risk", value: fireRiskLevel, color: riskColor, icon: "flame.fill")
                 StatusIndicator(title: "Active Fires", value: "\(activeFiresCount)", color: .appPrimary, icon: "fire.fill")
@@ -192,8 +180,7 @@ struct HomePageView: View {
             .opacity(animateHeader ? 1.0 : 0.0)
         }
     }
-    
-    // MARK: - Combined Actions Section - Circular Icons
+
     var combinedActionsSection: some View {
         VStack(alignment: .leading, spacing: 24) {
             Text("Quick Actions & Features")
@@ -201,7 +188,7 @@ struct HomePageView: View {
                 .foregroundColor(.appTextPrimary)
                 .opacity(animateCards ? 1.0 : 0.0)
                 .offset(y: animateCards ? 0 : 20)
-            
+
             LazyVGrid(columns: [
                 GridItem(.flexible()),
                 GridItem(.flexible()),
@@ -215,7 +202,7 @@ struct HomePageView: View {
                 )
                 .offset(x: animateCards ? 0 : -30)
                 .opacity(animateCards ? 1.0 : 0.0)
-                
+
                 CircularActionButton(
                     title: "Fire Map",
                     icon: "map.fill",
@@ -223,7 +210,7 @@ struct HomePageView: View {
                 )
                 .offset(x: animateCards ? 0 : 30)
                 .opacity(animateCards ? 1.0 : 0.0)
-                
+
                 CircularActionButton(
                     title: "Risk",
                     icon: "flame.fill",
@@ -231,7 +218,7 @@ struct HomePageView: View {
                 )
                 .offset(x: animateCards ? 0 : -30)
                 .opacity(animateCards ? 1.0 : 0.0)
-                
+
                 CircularActionButton(
                     title: "Support",
                     icon: "heart.fill",
@@ -239,7 +226,7 @@ struct HomePageView: View {
                 )
                 .offset(x: animateCards ? 0 : 30)
                 .opacity(animateCards ? 1.0 : 0.0)
-                
+
                 CircularActionButton(
                     title: "Chat",
                     icon: "message.fill",
@@ -247,7 +234,7 @@ struct HomePageView: View {
                 )
                 .offset(x: animateCards ? 0 : -30)
                 .opacity(animateCards ? 1.0 : 0.0)
-                
+
                 CircularActionButton(
                     title: "Learn",
                     icon: "book.fill",
@@ -255,7 +242,7 @@ struct HomePageView: View {
                 )
                 .offset(x: animateCards ? 0 : 30)
                 .opacity(animateCards ? 1.0 : 0.0)
-                
+
                 CircularActionButton(
                     title: "Community",
                     icon: "person.3.fill",
@@ -263,7 +250,7 @@ struct HomePageView: View {
                 )
                 .offset(x: animateCards ? 0 : -30)
                 .opacity(animateCards ? 1.0 : 0.0)
-                
+
                 CircularActionButton(
                     title: "Resources",
                     icon: "gift.fill",
@@ -274,8 +261,7 @@ struct HomePageView: View {
             }
         }
     }
-    
-    // MARK: - Latest News Section - Side by Side
+
     var latestNewsSection: some View {
         VStack(alignment: .leading, spacing: 24) {
             Text("Latest News")
@@ -283,15 +269,15 @@ struct HomePageView: View {
                 .foregroundColor(.appTextPrimary)
                 .opacity(animateCards ? 1.0 : 0.0)
                 .offset(y: animateCards ? 0 : 20)
-            
+
             if latestNewsFromService.isEmpty {
-                // Placeholder
+
                 HStack(spacing: 16) {
                     ZStack {
                         Circle()
                             .fill(Color.appGradientPrimary)
                             .frame(width: 40, height: 40)
-                        
+
                         Image(systemName: "newspaper")
                             .font(.system(size: 18))
                             .foregroundColor(.white)
@@ -316,27 +302,24 @@ struct HomePageView: View {
             }
         }
     }
-    
-    // MARK: - Helper Functions
+
     private func callEmergency() {
         if let url = URL(string: "tel:911") {
             UIApplication.shared.open(url)
         }
     }
-    
+
     private func updateDynamicData() {
-        // Update active fires count from FireDataService
+
         activeFiresCount = fireDataService.calFireIncidents.filter { $0.isActive }.count
-        
-        // Update evacuation alerts (fires over 1000 acres)
+
         evacuationAlerts = fireDataService.calFireIncidents.filter { $0.isActive && $0.acresBurned > 1000 }.count
-        
-        // Update last updated time
+
         let formatter = RelativeDateTimeFormatter()
         formatter.unitsStyle = .abbreviated
         lastUpdated = formatter.localizedString(for: Date(), relativeTo: Date())
     }
-    
+
     private var riskColor: Color {
         switch fireRiskLevel {
         case "Critical": return .appError
@@ -347,20 +330,18 @@ struct HomePageView: View {
     }
 }
 
-// MARK: - Supporting Views
-
 struct StatusIndicator: View {
     let title: String
     let value: String
     let color: Color
     let icon: String
-    
+
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: icon)
                 .font(.system(size: 10, weight: .semibold))
                 .foregroundColor(color)
-            
+
             VStack(alignment: .leading, spacing: 1) {
                 Text(title)
                     .font(.system(size: 10, weight: .medium, design: .default))
@@ -378,7 +359,7 @@ struct CircularActionButton: View {
     let icon: String
     let action: () -> Void
     @State private var isPressed = false
-    
+
     var body: some View {
         Button(action: {
             withAnimation(.easeInOut(duration: 0.1)) {
@@ -397,12 +378,12 @@ struct CircularActionButton: View {
                         .fill(Color.appGradientPrimary)
                         .frame(width: 50, height: 50)
                         .shadow(color: Color.appPrimary.opacity(0.4), radius: 8, x: 0, y: 4)
-                    
+
                     Image(systemName: icon)
                         .font(.system(size: 20, weight: .semibold))
                         .foregroundColor(.white)
                 }
-                
+
                 Text(title)
                     .font(.appCaption)
                     .foregroundColor(.appTextPrimary)
@@ -418,7 +399,7 @@ struct SimpleNewsCard: View {
     let item: FireNews
     @Environment(\.openURL) private var openURL
     @State private var isPressed = false
-    
+
     var body: some View {
         Button(action: {
             withAnimation(.easeInOut(duration: 0.1)) {
@@ -438,14 +419,14 @@ struct SimpleNewsCard: View {
                         .foregroundColor(.appTextPrimary)
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
-                    
+
                     Text(item.date)
                         .font(.appCaption)
                         .foregroundColor(.appTextSecondary)
                 }
-                
+
                 Spacer()
-                
+
                 Image(systemName: "arrow.up.right")
                     .font(.appCaption)
                     .foregroundColor(.appTextSecondary)
@@ -457,6 +438,3 @@ struct SimpleNewsCard: View {
         .scaleEffect(isPressed ? 0.98 : 1.0)
     }
 }
-
-
-

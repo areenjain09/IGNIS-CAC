@@ -1,38 +1,28 @@
-//
-//  FireRiskView.swift
-//  Ignis
-//
-//  Created by Areen Jain on 8/4/25.
-//
-
 import SwiftUI
 import CoreLocation
 
 struct FireRiskView: View {
     var body: some View {
         ZStack {
-            // Background
+
             Color.black
                 .ignoresSafeArea(.all)
-            
-            // Direct Area Map View without tabs
+
             AreaFireRiskMapView()
         }
     }
 }
-
-// MARK: - Personal Fire Risk View (Original View)
 
 struct PersonalFireRiskView: View {
     @StateObject private var riskService = EnhancedFireRiskService.shared
     @StateObject private var locationManager = LocationManager.shared
     @State private var selectedFactor: RiskFactor?
     @State private var showingDetails = false
-    
+
     var body: some View {
         NavigationView {
             ZStack {
-                // Background gradient
+
                 LinearGradient(
                     gradient: Gradient(colors: [
                         Color(red: 0.05, green: 0.02, blue: 0.01),
@@ -42,7 +32,7 @@ struct PersonalFireRiskView: View {
                     endPoint: .bottomTrailing
                 )
                 .ignoresSafeArea()
-                
+
                 ScrollView {
                     VStack(spacing: 20) {
                         if let prediction = riskService.currentPrediction {
@@ -70,20 +60,18 @@ struct PersonalFireRiskView: View {
             }
         }
     }
-    
-    // MARK: - Risk Card
-    
+
     private func riskCard(prediction: AreaFireRiskPrediction) -> some View {
         VStack(spacing: 16) {
-            // Risk level indicator
+
             HStack {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Current Risk Level")
                         .font(.headline)
                         .foregroundColor(.white.opacity(0.8))
-                    
+
                     HStack(spacing: 12) {
-                        // Risk level circle
+
                         ZStack {
                             Circle()
                                 .fill(getRiskColor(for: prediction.riskLevel))
@@ -93,37 +81,36 @@ struct PersonalFireRiskView: View {
                                         .stroke(Color.white, lineWidth: 3)
                                 )
                                 .shadow(color: getRiskColor(for: prediction.riskLevel).opacity(0.5), radius: 10)
-                            
+
                             Text("\(prediction.riskPercentage)%")
                                 .font(.title2.bold())
                                 .foregroundColor(.white)
                         }
-                        
+
                         VStack(alignment: .leading, spacing: 4) {
                             Text(prediction.riskLevel.rawValue.uppercased())
                                 .font(.title2.bold())
                                 .foregroundColor(.white)
-                            
+
                             Text(prediction.riskLevel.description)
                                 .font(.subheadline)
                                 .foregroundColor(.white.opacity(0.8))
                         }
-                        
+
                         Spacer()
                     }
                 }
-                
+
                 Spacer()
             }
-            
-            // Confidence indicator
+
             HStack {
                 Text("Confidence: \(Int(prediction.confidence * 100))%")
                     .font(.caption)
                     .foregroundColor(.white.opacity(0.7))
-                
+
                 Spacer()
-                
+
                 Text("Updated: \(formatLastUpdated(prediction.lastUpdated))")
                     .font(.caption)
                     .foregroundColor(.white.opacity(0.7))
@@ -139,15 +126,13 @@ struct PersonalFireRiskView: View {
                 )
         )
     }
-    
-    // MARK: - Risk Factors Section
-    
+
     private func factorsSection(prediction: AreaFireRiskPrediction) -> some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Risk Factors")
                 .font(.title2.bold())
                 .foregroundColor(.white)
-            
+
             LazyVStack(spacing: 12) {
                 ForEach(prediction.factors) { factor in
                     RiskFactorCard(factor: factor) {
@@ -158,15 +143,13 @@ struct PersonalFireRiskView: View {
             }
         }
     }
-    
-    // MARK: - Recommendations Section
-    
+
     private func recommendationsSection(prediction: AreaFireRiskPrediction) -> some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Recommendations")
                 .font(.title2.bold())
                 .foregroundColor(.white)
-            
+
             VStack(spacing: 8) {
                 ForEach(prediction.evacuationRoutes, id: \.self) { route in
                     HStack(alignment: .top, spacing: 12) {
@@ -174,12 +157,12 @@ struct PersonalFireRiskView: View {
                             .foregroundColor(getRiskColor(for: prediction.riskLevel))
                             .font(.caption)
                             .frame(width: 16)
-                        
+
                         Text(route)
                             .font(.subheadline)
                             .foregroundColor(.white.opacity(0.9))
                             .multilineTextAlignment(.leading)
-                        
+
                         Spacer()
                     }
                     .padding(.vertical, 4)
@@ -196,19 +179,17 @@ struct PersonalFireRiskView: View {
             )
         }
     }
-    
-    // MARK: - Loading View
-    
+
     private var loadingView: some View {
         VStack(spacing: 20) {
             ProgressView()
                 .scaleEffect(1.5)
                 .tint(.wsOrange)
-            
+
             Text("Analyzing fire risk...")
                 .font(.headline)
                 .foregroundColor(.white)
-            
+
             Text("This may take a moment")
                 .font(.subheadline)
                 .foregroundColor(.white.opacity(0.7))
@@ -219,19 +200,17 @@ struct PersonalFireRiskView: View {
                 .fill(Color.wsDark.opacity(0.8))
         )
     }
-    
-    // MARK: - No Data View
-    
+
     private var noDataView: some View {
         VStack(spacing: 20) {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 50))
                 .foregroundColor(.wsOrange)
-            
+
             Text("Unable to assess fire risk")
                 .font(.headline)
                 .foregroundColor(.white)
-            
+
             if let error = riskService.errorMessage {
                 Text(error)
                     .font(.subheadline)
@@ -242,7 +221,7 @@ struct PersonalFireRiskView: View {
                     .font(.subheadline)
                     .foregroundColor(.white.opacity(0.7))
             }
-            
+
             Button("Try Again") {
                 Task {
                     await refreshRiskData()
@@ -261,13 +240,11 @@ struct PersonalFireRiskView: View {
                 .fill(Color.wsDark.opacity(0.8))
         )
     }
-    
-    // MARK: - Helper Methods
-    
+
     private func refreshRiskData() async {
         _ = await riskService.predictFireRiskForCurrentLocation()
     }
-    
+
     private func getRiskColor(for riskLevel: FireRiskLevel) -> Color {
         switch riskLevel {
         case .low: return .green
@@ -276,7 +253,7 @@ struct PersonalFireRiskView: View {
         case .extreme: return .red
         }
     }
-    
+
     private func getRecommendationIcon(for riskLevel: FireRiskLevel) -> String {
         switch riskLevel {
         case .low: return "checkmark.circle"
@@ -285,7 +262,7 @@ struct PersonalFireRiskView: View {
         case .extreme: return "flame.fill"
         }
     }
-    
+
     private func formatLastUpdated(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateStyle = .none
@@ -294,39 +271,36 @@ struct PersonalFireRiskView: View {
     }
 }
 
-// MARK: - Risk Factor Card
-
 struct RiskFactorCard: View {
     let factor: RiskFactor
     let onTap: () -> Void
-    
+
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 12) {
-                // Impact indicator
+
                 Circle()
                     .fill(getImpactColor())
                     .frame(width: 12, height: 12)
-                
+
                 VStack(alignment: .leading, spacing: 4) {
                     Text(factor.name)
                         .font(.subheadline.bold())
                         .foregroundColor(.white)
                         .multilineTextAlignment(.leading)
-                    
+
                     Text(factor.description)
                         .font(.caption)
                         .foregroundColor(.white.opacity(0.7))
                         .multilineTextAlignment(.leading)
                 }
-                
+
                 Spacer()
-                
-                // Impact value
+
                 Text("\(Int(factor.impact * 100))%")
                     .font(.caption.bold())
                     .foregroundColor(getImpactColor())
-                
+
                 Image(systemName: "chevron.right")
                     .font(.caption)
                     .foregroundColor(.white.opacity(0.5))
@@ -343,7 +317,7 @@ struct RiskFactorCard: View {
         }
         .buttonStyle(PlainButtonStyle())
     }
-    
+
     private func getImpactColor() -> Color {
         if factor.impact > 0.5 {
             return .red
@@ -357,12 +331,10 @@ struct RiskFactorCard: View {
     }
 }
 
-// MARK: - Risk Factor Detail View
-
 struct RiskFactorDetailView: View {
     let factor: RiskFactor
     @Environment(\.dismiss) private var dismiss
-    
+
     var body: some View {
         NavigationView {
             ZStack {
@@ -375,16 +347,16 @@ struct RiskFactorDetailView: View {
                     endPoint: .bottomTrailing
                 )
                 .ignoresSafeArea()
-                
+
                 ScrollView {
                     VStack(spacing: 20) {
-                        // Factor header
+
                         VStack(spacing: 12) {
                             Text(factor.name)
                                 .font(.title2.bold())
                                 .foregroundColor(.white)
                                 .multilineTextAlignment(.center)
-                            
+
                             Text(factor.description)
                                 .font(.subheadline)
                                 .foregroundColor(.white.opacity(0.8))
@@ -395,30 +367,29 @@ struct RiskFactorDetailView: View {
                             RoundedRectangle(cornerRadius: 16)
                                 .fill(Color.wsDark.opacity(0.8))
                         )
-                        
-                        // Impact details
+
                         VStack(alignment: .leading, spacing: 16) {
                             Text("Impact Analysis")
                                 .font(.headline)
                                 .foregroundColor(.white)
-                            
+
                             HStack {
                                 Text("Impact Level:")
                                     .foregroundColor(.white.opacity(0.8))
-                                
+
                                 Spacer()
-                                
+
                                 Text("\(Int(factor.impact * 100))%")
                                     .font(.headline.bold())
                                     .foregroundColor(getImpactColor())
                             }
-                            
+
                             HStack {
                                 Text("Weight:")
                                     .foregroundColor(.white.opacity(0.8))
-                                
+
                                 Spacer()
-                                
+
                                 Text("\(Int(factor.weight * 100))%")
                                     .font(.headline.bold())
                                     .foregroundColor(.wsOrange)
@@ -445,7 +416,7 @@ struct RiskFactorDetailView: View {
             }
         }
     }
-    
+
     private func getImpactColor() -> Color {
         if factor.impact > 0.5 {
             return .red
@@ -458,8 +429,6 @@ struct RiskFactorDetailView: View {
         }
     }
 }
-
-// MARK: - Preview
 
 #Preview {
     FireRiskView()

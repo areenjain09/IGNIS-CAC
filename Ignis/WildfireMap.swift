@@ -11,23 +11,17 @@ struct WildfireMap: View {
             span: MKCoordinateSpan(latitudeDelta: 8.0, longitudeDelta: 8.0)
         )
     )
-    
+
     @State private var currentRegion = MKCoordinateRegion(
         center: CLLocationCoordinate2D(latitude: 37.25, longitude: -120.0),
         span: MKCoordinateSpan(latitudeDelta: 8.0, longitudeDelta: 8.0)
     )
-    
+
     @State private var selectedIncident: CALFireIncident?
 
     @StateObject private var dataService = FireDataService.shared
     @StateObject private var locationManager = LocationManager.shared
-    
 
-    
-
-    
-    
-    
     var body: some View {
             ZStack {
                         Map(position: $cameraPosition, interactionModes: [.pan, .rotate]) {
@@ -42,22 +36,20 @@ struct WildfireMap: View {
                             }
                         }) {
                             ZStack {
-                                // Outer black background circle
+
                     Circle()
                                     .fill(Color.appSurface)
                                     .frame(width: 44, height: 44)
-                                
-                                // Inner semi-transparent circle for depth
+
                 Circle()
                                     .fill(Color.appCard)
                                     .frame(width: 40, height: 40)
-                
-                // Fire icon
+
                 Image(systemName: "flame.fill")
                                     .foregroundColor(flameColor(for: incident))
                             .font(.title2)
                                     .shadow(color: .black.opacity(0.5), radius: 1, x: 0, y: 1)
-                                // Subtle accent ring for clarity
+
                                 Circle()
                                     .stroke(flameColor(for: incident).opacity(0.4), lineWidth: 1)
                                     .frame(width: 44, height: 44)
@@ -77,21 +69,19 @@ struct WildfireMap: View {
             .ignoresSafeArea()
             .contentShape(Rectangle())
 
-            // Pure black overlay for better contrast
             Color.black.opacity(0.1)
                 .ignoresSafeArea()
-                .allowsHitTesting(false) // Allow gestures to pass through to the map
+                .allowsHitTesting(false)
 
                 VStack {
             Spacer()
                     .allowsHitTesting(false)
-            
-                // Bottom right controls
+
                 HStack {
                     Spacer()
                         .allowsHitTesting(false)
                     VStack(spacing: 8) {
-                        // Zoom In Button
+
                         Button(action: zoomIn) {
                             Image(systemName: "plus")
                                 .font(.system(size: 18, weight: .semibold))
@@ -102,8 +92,7 @@ struct WildfireMap: View {
                                 .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.white.opacity(0.08), lineWidth: 1))
                                 .shadow(color: .black.opacity(0.2), radius: 3, x: 0, y: 1)
                         }
-                        
-                        // Zoom Out Button
+
                         Button(action: zoomOut) {
                             Image(systemName: "minus")
                                 .font(.system(size: 18, weight: .semibold))
@@ -115,7 +104,6 @@ struct WildfireMap: View {
                                 .shadow(color: .black.opacity(0.2), radius: 3, x: 0, y: 1)
                     }
 
-                        // Locate Button
                         Button(action: recenterToUser) {
                             Image(systemName: "location.fill")
                                 .font(.system(size: 18, weight: .semibold))
@@ -128,13 +116,13 @@ struct WildfireMap: View {
                         }
                 }
                 .padding(.trailing, 16)
-                    .padding(.bottom, 140) // Increased padding to clear the custom nav bar
+                    .padding(.bottom, 140)
                 }
                 .allowsHitTesting(true)
             }
         }
         .onMapCameraChange(frequency: .continuous) { context in
-            // Update our stored region when user pans/zooms manually
+
             currentRegion = context.region
         }
         .sheet(item: $selectedIncident) { incident in
@@ -144,27 +132,22 @@ struct WildfireMap: View {
         }
         .task { dataService.start() }
     }
-    
-        // MARK: - Helper Functions
+
     private func flameColor(for incident: CALFireIncident) -> Color {
-        // If fire is inactive, always gray
+
         if !incident.isActive {
             return .gray
         }
-        
-        // For active fires: red for dangerous (>10k acres), orange for everything else
+
         let acres = incident.acresBurned
-        
+
         if acres > 10000 {
-            return .red      // Red - dangerous fires (>10k acres)
+            return .red
         } else {
-            return .orange   // Orange - all other active fires
+            return .orange
         }
     }
-    
 
-    
-    // MARK: - Zoom Functions
     private func zoomIn() {
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
         let newSpan = MKCoordinateSpan(
@@ -174,7 +157,7 @@ struct WildfireMap: View {
         currentRegion = MKCoordinateRegion(center: currentRegion.center, span: newSpan)
         cameraPosition = .region(currentRegion)
     }
-    
+
     private func zoomOut() {
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
         let newSpan = MKCoordinateSpan(
@@ -204,7 +187,7 @@ struct WildfireMap: View {
         case .notDetermined:
             locationManager.requestLocationPermission()
         case .denied, .restricted:
-            // Optionally surface a subtle prompt elsewhere
+
             break
         @unknown default:
             break
@@ -212,7 +195,6 @@ struct WildfireMap: View {
     }
 }
 
-// MARK: - Fire Incident Detail Modal
 struct FireIncidentDetailView: View {
     let incident: CALFireIncident
     @Environment(\.dismiss) private var dismiss
@@ -222,57 +204,47 @@ struct FireIncidentDetailView: View {
     @State private var evacInfo: EvacuationInfo? = nil
     @State private var details: CalFireIncidentDetail? = nil
     @State private var isLoadingDetails: Bool = false
-    
+
     var body: some View {
         NavigationStack {
             ZStack {
-                // Unified app background
+
                 Color.appGradientBackground
                     .ignoresSafeArea()
-                
+
                 ScrollView {
                     VStack(spacing: 24) {
-                        // Header Section
+
                         headerSection
-                        
-                        // Status Section
+
                         statusSection
-                        
-                        // Fire Metrics Section
+
                         metricsSection
-                        
-                        // Location Section
+
                         locationSection
-                        
-                        // Additional Info Section
+
                         additionalInfoSection
-                        
-                        // Evacuation Information Section (fetched from CAL FIRE page)
+
                         evacuationSection
 
-                        // Road Closures Section (standalone)
                         if let d = details, let items = d.roadClosures, !items.isEmpty {
                             roadClosuresSection(items: items)
                         }
 
-                        // Evacuation Shelters Section (standalone)
                         if let d = details, let shelters = d.sheltersStructured, !shelters.isEmpty {
                             evacuationSheltersSection(shelters: shelters)
                         }
 
-                        // Temporary Evacuation Points Section (standalone)
                         if let d = details, let teps = d.tepsStructured, !teps.isEmpty {
                             temporaryEvacuationPointsSection(teps: teps)
                         }
 
-                        // Resources Assigned Section (standalone)
                         if let d = details, let resources = d.resourcesMetrics, !resources.isEmpty {
                             resourcesAssignedSection(resources: resources)
                         }
 
-                        // Incident Detail Sections (shelters, resources, damage)
                         detailSections
-                        
+
                         Spacer(minLength: 50)
                     }
                     .padding(.horizontal, 20)
@@ -291,8 +263,7 @@ struct FireIncidentDetailView: View {
             }
         }
     }
-    
-    // MARK: - Evacuation Section
+
     private var evacuationSection: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 10) {
@@ -310,7 +281,7 @@ struct FireIncidentDetailView: View {
                     EvacCard(title: county, color: Color.red.opacity(0.12), dot: .red, lines: "Zones: \(zones.joined(separator: ", "))")
                 }
             } else {
-                // Explicit fallback when there are no Level 3 orders
+
                 EvacCard(
                     title: "No evacuation order in place",
                     color: Color.red.opacity(0.06),
@@ -364,7 +335,7 @@ struct FireIncidentDetailView: View {
         )
         .task { await loadEvacuationInfoIfNeeded() }
     }
-    // MARK: - Detail Sections
+
     private var detailSections: some View {
         VStack(spacing: 16) {
             Group {
@@ -375,7 +346,7 @@ struct FireIncidentDetailView: View {
                         .padding()
                 } else {
                     if let d = details {
-                        // Prevent implicit layout animations to avoid visual wobble
+
                         EmptyView().transaction { $0.disablesAnimations = true }
                         if let items = d.animalEvacuationShelters, !items.isEmpty { bulletCard(title: "Animal Evacuation Shelters", items: items, icon: "pawprint.fill") }
                         if let metrics = d.damageMetrics, !metrics.isEmpty { metricsCard(title: "Damage Assessment", metrics: metrics, icon: "building.2.crop.circle") }
@@ -409,10 +380,9 @@ struct FireIncidentDetailView: View {
         .task { await loadDetailsIfNeeded() }
     }
 
-    // MARK: - Road Closures Section
     private func roadClosuresSection(items: [String]) -> some View {
         VStack(alignment: .leading, spacing: 16) {
-            // Main Title
+
             HStack(spacing: 10) {
                 Image(systemName: "road.lanes")
                     .foregroundColor(.appPrimary)
@@ -422,8 +392,7 @@ struct FireIncidentDetailView: View {
                     .foregroundColor(.appTextPrimary)
                 Spacer()
             }
-            
-            // Road Closure Cards
+
             VStack(spacing: 12) {
                 ForEach(Array(items.prefix(6)), id: \.self) { roadClosure in
                     roadClosureCard(roadClosure: roadClosure)
@@ -441,24 +410,22 @@ struct FireIncidentDetailView: View {
                 .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
         )
     }
-    
-    // Individual Road Closure Card
+
     private func roadClosureCard(roadClosure: String) -> some View {
         HStack(alignment: .top, spacing: 12) {
-            // Road Icon
+
             Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundColor(.red)
                 .font(.title3)
                 .frame(width: 24, height: 24)
-            
-            // Road Closure Text
+
             Text(roadClosure)
                 .font(.subheadline)
                 .foregroundColor(.appTextPrimary)
                 .lineSpacing(4)
                 .fixedSize(horizontal: false, vertical: true)
                 .multilineTextAlignment(.leading)
-            
+
             Spacer()
         }
         .padding(16)
@@ -472,10 +439,9 @@ struct FireIncidentDetailView: View {
         )
     }
 
-    // MARK: - Resources Assigned Section
     private func resourcesAssignedSection(resources: [ResourceMetric]) -> some View {
         VStack(alignment: .leading, spacing: 16) {
-            // Main Title
+
             HStack(spacing: 10) {
                 Image(systemName: "wrench.and.screwdriver.fill")
                     .foregroundColor(.appPrimary)
@@ -485,8 +451,7 @@ struct FireIncidentDetailView: View {
                     .foregroundColor(.appTextPrimary)
                 Spacer()
             }
-            
-            // Resources Grid with centered last item
+
             LazyVGrid(columns: [
                 GridItem(.flexible()),
                 GridItem(.flexible())
@@ -508,15 +473,14 @@ struct FireIncidentDetailView: View {
                 .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
         )
     }
-    
-    // MARK: - Resource Metric Tile
+
     private func resourceMetricTile(resource: ResourceMetric) -> some View {
         VStack(spacing: 8) {
             Text(resource.value)
                 .font(.system(size: 24, weight: .bold, design: .rounded))
                 .foregroundColor(.appTextPrimary)
                 .monospacedDigit()
-            
+
             Text(resource.label)
                 .font(.caption.weight(.semibold))
                 .foregroundColor(.appTextSecondary)
@@ -538,7 +502,7 @@ struct FireIncidentDetailView: View {
 
     private func bulletCard(title: String, items: [String], icon: String) -> some View {
         VStack(alignment: .leading, spacing: 16) {
-            // Header
+
             HStack(alignment: .center, spacing: 12) {
                 Image(systemName: icon)
                     .foregroundColor(.appPrimary)
@@ -549,8 +513,7 @@ struct FireIncidentDetailView: View {
                     .foregroundColor(.appTextPrimary)
                 Spacer()
             }
-            
-            // Content
+
             VStack(alignment: .leading, spacing: 12) {
                 ForEach(Array(items.prefix(8)), id: \.self) { item in
                     HStack(alignment: .top, spacing: 12) {
@@ -558,7 +521,7 @@ struct FireIncidentDetailView: View {
                             .fill(Color.appPrimary)
                             .frame(width: 8, height: 8)
                             .padding(.top, 6)
-                        
+
                         Text(item)
                             .font(.subheadline)
                             .foregroundColor(.appTextPrimary)
@@ -581,10 +544,9 @@ struct FireIncidentDetailView: View {
         )
     }
 
-    // Shelter card with improved layout
     private func shelterCard(title: String, shelters: [ShelterInfo], icon: String) -> some View {
         VStack(alignment: .leading, spacing: 16) {
-            // Header
+
             HStack(alignment: .center, spacing: 12) {
                 Image(systemName: icon)
                     .foregroundColor(.appPrimary)
@@ -595,19 +557,17 @@ struct FireIncidentDetailView: View {
                     .foregroundColor(.appTextPrimary)
                 Spacer()
             }
-            
-            // Content
+
             VStack(alignment: .leading, spacing: 16) {
                 ForEach(Array(shelters.prefix(3)), id: \.self) { shelter in
                     VStack(alignment: .leading, spacing: 8) {
-                        // Name
+
                         Text(shelter.name)
                             .font(.headline.weight(.semibold))
                             .foregroundColor(.appTextPrimary)
                             .lineLimit(2)
                             .multilineTextAlignment(.leading)
-                        
-                        // Address
+
                         if let address = shelter.address {
                             Text(address)
                                 .font(.subheadline)
@@ -615,8 +575,7 @@ struct FireIncidentDetailView: View {
                                 .lineLimit(2)
                                 .multilineTextAlignment(.leading)
                         }
-                        
-                        // Note
+
                         if let note = shelter.note {
                             Text(note)
                                 .font(.footnote)
@@ -646,11 +605,10 @@ struct FireIncidentDetailView: View {
                 .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
         )
     }
-    
-    // TEP card with improved layout
+
     private func tepCard(title: String, teps: [TEPInfo], icon: String) -> some View {
         VStack(alignment: .leading, spacing: 16) {
-            // Header
+
             HStack(alignment: .center, spacing: 12) {
                 Image(systemName: icon)
                     .foregroundColor(.appPrimary)
@@ -661,19 +619,17 @@ struct FireIncidentDetailView: View {
                     .foregroundColor(.appTextPrimary)
                 Spacer()
             }
-            
-            // Content
+
             VStack(alignment: .leading, spacing: 16) {
                 ForEach(Array(teps.prefix(3)), id: \.self) { tep in
                     VStack(alignment: .leading, spacing: 8) {
-                        // Name
+
                         Text(tep.name)
                             .font(.headline.weight(.semibold))
                             .foregroundColor(.appTextPrimary)
                             .lineLimit(2)
                             .multilineTextAlignment(.leading)
-                        
-                        // Address
+
                         if let address = tep.address {
                             Text(address)
                                 .font(.subheadline)
@@ -681,8 +637,7 @@ struct FireIncidentDetailView: View {
                                 .lineLimit(2)
                                 .multilineTextAlignment(.leading)
                         }
-                        
-                        // Hours
+
                         if let hours = tep.hours {
                             Text(hours)
                                 .font(.footnote.weight(.medium))
@@ -713,16 +668,15 @@ struct FireIncidentDetailView: View {
         )
     }
 
-    // Resources/Damage metrics with improved layout
     private func metricsCard(title: String, metrics: [ResourceMetric], icon: String) -> some View {
         let columns = [
             GridItem(.flexible(), spacing: 12),
             GridItem(.flexible(), spacing: 12)
         ]
         let cappedMetrics = Array(metrics.prefix(8))
-        
+
         return VStack(alignment: .leading, spacing: 16) {
-            // Header
+
             HStack(alignment: .center, spacing: 12) {
                 Image(systemName: icon)
                     .foregroundColor(.appPrimary)
@@ -733,16 +687,14 @@ struct FireIncidentDetailView: View {
                     .foregroundColor(.appTextPrimary)
                 Spacer()
             }
-            
-            // Damage description
+
             if title.contains("Damage") {
                 Text("Confirmed Damage to Property, Injuries, and Fatalities.")
                     .font(.subheadline)
                     .foregroundColor(.appTextTertiary)
                     .padding(.bottom, 8)
             }
-            
-            // Metrics grid
+
             LazyVGrid(columns: columns, spacing: 12) {
                 ForEach(Array(cappedMetrics.enumerated()), id: \.offset) { pair in
                     let metric = pair.element
@@ -751,7 +703,7 @@ struct FireIncidentDetailView: View {
                             .font(.system(size: 24, weight: .bold, design: .rounded))
                             .foregroundColor(.appTextPrimary)
                             .monospacedDigit()
-                        
+
                         Text(metric.label)
                             .font(.caption.weight(.semibold))
                             .foregroundColor(.appTextSecondary)
@@ -796,27 +748,24 @@ struct FireIncidentDetailView: View {
         }
     }
 
-    
-    // MARK: - Header Section
     private var headerSection: some View {
         VStack(spacing: 16) {
-            // Fire Icon
+
         ZStack {
                                 Circle()
                     .fill(Color.appSurface)
                     .frame(width: 80, height: 80)
-                
+
                                         Circle()
                     .fill(Color.appCard)
                     .frame(width: 70, height: 70)
-                
+
                 Image(systemName: "flame.fill")
                     .foregroundColor(flameColorForDetail(incident))
                     .font(.system(size: 32))
                     .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 2)
             }
-            
-            // Fire Name
+
             Text(incident.name)
                             .font(.title2)
                 .fontWeight(.bold)
@@ -825,24 +774,22 @@ struct FireIncidentDetailView: View {
                 .padding(.horizontal)
         }
     }
-    
-    // MARK: - Status Section
+
     private var statusSection: some View {
         VStack(spacing: 12) {
             HStack {
                 Image(systemName: incident.isActive ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
                     .foregroundColor(incident.isActive ? .red : .green)
                     .font(.title3)
-                
+
                 Text(incident.statusText)
                     .font(.headline)
                     .fontWeight(.semibold)
                     .foregroundColor(incident.isActive ? .red : .green)
-                
+
                 Spacer()
                             }
-                            
-            // Containment Progress
+
             VStack(alignment: .leading, spacing: 8) {
                             HStack {
                     Text("Containment")
@@ -854,7 +801,7 @@ struct FireIncidentDetailView: View {
                         .fontWeight(.semibold)
                         .foregroundColor(.appPrimary)
                 }
-                
+
                 ProgressView(value: incident.percentContained / 100.0)
                     .tint(.appPrimary)
                     .scaleEffect(y: 2)
@@ -870,8 +817,7 @@ struct FireIncidentDetailView: View {
                     )
             )
     }
-            
-    // MARK: - Metrics Section
+
     private var metricsSection: some View {
                         VStack(spacing: 16) {
             HStack {
@@ -880,17 +826,16 @@ struct FireIncidentDetailView: View {
                     .foregroundColor(.appTextPrimary)
                 Spacer()
             }
-            
+
             HStack(spacing: 16) {
-                // Acres Burned
+
                 FireMetricCard(
                     icon: "flame.fill",
                     title: "Acres Burned",
                     value: formatAcres(incident.acresBurned),
                     color: .red
                 )
-                
-                // Intensity Level
+
                 FireMetricCard(
                     icon: "thermometer.high",
                     title: "Intensity",
@@ -900,8 +845,7 @@ struct FireIncidentDetailView: View {
             }
         }
     }
-    
-    // MARK: - Location Section
+
     private var locationSection: some View {
         VStack(spacing: 16) {
             HStack {
@@ -910,7 +854,7 @@ struct FireIncidentDetailView: View {
                                     .foregroundColor(.appTextPrimary)
                 Spacer()
                             }
-                
+
                 VStack(spacing: 12) {
                 InfoRow(icon: "location.fill", title: "County", value: incident.county)
                 InfoRow(icon: "mappin.and.ellipse", title: "Location", value: incident.location)
@@ -927,8 +871,7 @@ struct FireIncidentDetailView: View {
                             )
                     }
     }
-    
-    // MARK: - Additional Info Section
+
     private var additionalInfoSection: some View {
         VStack(spacing: 16) {
             HStack {
@@ -937,22 +880,22 @@ struct FireIncidentDetailView: View {
                                         .foregroundColor(.appTextPrimary)
             Spacer()
                                 }
-            
+
                 VStack(spacing: 12) {
                 InfoRow(icon: "calendar", title: "Started", value: formatDate(incident.startedDate))
-                
+
                 if !incident.url.isEmpty {
             HStack {
                         Image(systemName: "link")
                             .foregroundColor(.appPrimary)
                             .frame(width: 20)
-                        
+
                         Text("More Info")
                             .foregroundColor(.appTextSecondary)
                             .font(.subheadline)
-                        
+
                 Spacer()
-                
+
                         Link("View Details", destination: URL(string: incident.url) ?? URL(string: "https://fire.ca.gov")!)
                             .foregroundColor(.appPrimary)
                             .font(.subheadline)
@@ -972,15 +915,14 @@ struct FireIncidentDetailView: View {
                             )
                         }
                     }
-    
-    // MARK: - Helper Functions
+
     private func flameColorForDetail(_ incident: CALFireIncident) -> Color {
         if !incident.isActive {
             return .gray
         }
         return incident.acresBurned > 10000 ? .red : .orange
     }
-    
+
     private func formatAcres(_ acres: Double) -> String {
         if acres >= 1000 {
             return String(format: "%.1fK", acres / 1000)
@@ -988,7 +930,7 @@ struct FireIncidentDetailView: View {
             return String(format: "%.0f", acres)
         }
     }
-    
+
     private func intensityText(_ level: Int) -> String {
         switch level {
         case 0: return "Low"
@@ -998,7 +940,7 @@ struct FireIncidentDetailView: View {
         default: return "Unknown"
         }
     }
-    
+
     private func intensityColor(_ level: Int) -> Color {
         switch level {
         case 0: return .green
@@ -1008,27 +950,25 @@ struct FireIncidentDetailView: View {
         default: return .gray
         }
     }
-    
+
     private func formatDate(_ dateString: String) -> String {
         if dateString.isEmpty {
             return "Unknown"
         }
-        
-        // Try to parse and format the date
+
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
-        
+
         if let date = formatter.date(from: String(dateString.prefix(10))) {
             formatter.dateStyle = .medium
             return formatter.string(from: date)
         }
-        
+
         return dateString
     }
-    
-    // Lightweight evacuation summary helpers (very naive HTML parsing)
+
     private func extractZones(afterAny headers: [String], in html: String) -> [String: [String]] {
-        // Collect all candidate header ranges (case-insensitive)
+
         var candidateRanges: [Range<String.Index>] = []
         for h in headers {
             var searchStart = html.startIndex
@@ -1039,12 +979,10 @@ struct FireIncidentDetailView: View {
         }
         if candidateRanges.isEmpty { return [:] }
 
-        // Prepare regexes once
         let zonePattern = "[A-Z]{2,4}-\\d{1,4}[A-Z]?"
         let zoneRegex = try? NSRegularExpression(pattern: zonePattern)
         let countyRegex = try? NSRegularExpression(pattern: "[A-Z][A-Za-z\\- ]+ County")
 
-        // Choose the first candidate whose following window actually contains zones or counties
         var chosenText: String? = nil
         for r in candidateRanges.sorted(by: { $0.lowerBound < $1.lowerBound }) {
             let window = String(html[r.upperBound...].prefix(4000))
@@ -1057,7 +995,6 @@ struct FireIncidentDetailView: View {
         }
         guard let text = chosenText else { return [:] }
 
-        // Extract zones grouped by county if possible
         var result: [String: [String]] = [:]
         let countyMatches = countyRegex?.matches(in: text, range: NSRange(text.startIndex..., in: text)) ?? []
         for m in countyMatches {
@@ -1069,7 +1006,6 @@ struct FireIncidentDetailView: View {
             if !zones.isEmpty { result[countyName] = Array(Set(zones)).sorted() }
         }
 
-        // Fallback: global zones when county headings aren’t present
         if result.isEmpty {
             let matches = zoneRegex?.matches(in: text, range: NSRange(text.startIndex..., in: text)) ?? []
             let zones = matches.compactMap { Range($0.range, in: text).map { String(text[$0]) } }
@@ -1086,7 +1022,7 @@ struct FireIncidentDetailView: View {
         do {
             let (data, _) = try await URLSession.shared.data(from: pageURL)
             if let html = String(data: data, encoding: .utf8) {
-                // Build evacInfo buckets; match both singular/plural and level labels
+
                 let orders = extractZones(afterAny: [
                     "Evacuation Orders",
                     "Evacuation Order",
@@ -1100,18 +1036,17 @@ struct FireIncidentDetailView: View {
                     "Level 2 - Set"
                 ], in: html)
                 self.evacInfo = EvacuationInfo(orders: orders, warnings: warnings)
-                // Keep a simple summary fallback too
+
                 evacuationSummary = orders.isEmpty && warnings.isEmpty ? nil : "parsed"
             }
         } catch {
-            // Ignore; fallback button remains
+
         }
     }
 
-    // MARK: - Evacuation Shelters Section
     private func evacuationSheltersSection(shelters: [ShelterInfo]) -> some View {
         VStack(alignment: .leading, spacing: 16) {
-            // Main Title
+
             HStack(spacing: 10) {
                 Image(systemName: "house.fill")
                     .foregroundColor(.appPrimary)
@@ -1121,8 +1056,7 @@ struct FireIncidentDetailView: View {
                     .foregroundColor(.appTextPrimary)
                 Spacer()
             }
-            
-            // Shelter Cards
+
             VStack(spacing: 12) {
                 ForEach(Array(shelters.prefix(4)), id: \.self) { shelter in
                     evacuationShelterCard(shelter: shelter)
@@ -1140,26 +1074,24 @@ struct FireIncidentDetailView: View {
                 .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
         )
     }
-    
-    // Individual Evacuation Shelter Card
+
     private func evacuationShelterCard(shelter: ShelterInfo) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Shelter Icon and Name
+
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: "house.circle.fill")
                     .foregroundColor(.green)
                     .font(.title3)
                     .frame(width: 24, height: 24)
-                
+
                 VStack(alignment: .leading, spacing: 6) {
-                    // Name
+
                     Text(shelter.name)
                         .font(.headline.weight(.semibold))
                         .foregroundColor(.appTextPrimary)
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
-                    
-                    // Address (formatted better)
+
                     if let address = shelter.address {
                         Text(address)
                             .font(.subheadline)
@@ -1168,7 +1100,7 @@ struct FireIncidentDetailView: View {
                             .multilineTextAlignment(.leading)
                     }
                 }
-                
+
                 Spacer()
             }
         }
@@ -1183,10 +1115,9 @@ struct FireIncidentDetailView: View {
         )
     }
 
-    // MARK: - Temporary Evacuation Points Section
     private func temporaryEvacuationPointsSection(teps: [TEPInfo]) -> some View {
         VStack(alignment: .leading, spacing: 16) {
-            // Main Title
+
             HStack(spacing: 10) {
                 Image(systemName: "person.2.fill")
                     .foregroundColor(.appPrimary)
@@ -1196,8 +1127,7 @@ struct FireIncidentDetailView: View {
                     .foregroundColor(.appTextPrimary)
                 Spacer()
             }
-            
-            // TEP Cards
+
             VStack(spacing: 12) {
                 ForEach(Array(teps.prefix(4)), id: \.self) { tep in
                     individualTEPCard(tep: tep)
@@ -1215,26 +1145,24 @@ struct FireIncidentDetailView: View {
                 .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
         )
     }
-    
-    // Individual TEP Card with tappable icons
+
     private func individualTEPCard(tep: TEPInfo) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            // TEP Icon and Name
+
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: "person.2.circle.fill")
                     .foregroundColor(.blue)
                     .font(.title3)
                     .frame(width: 24, height: 24)
-                
+
                 VStack(alignment: .leading, spacing: 6) {
-                    // Name
+
                     Text(tep.name)
                         .font(.headline.weight(.semibold))
                         .foregroundColor(.appTextPrimary)
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
-                    
-                    // Address
+
                     if let address = tep.address {
                         Text(address)
                             .font(.subheadline)
@@ -1243,12 +1171,11 @@ struct FireIncidentDetailView: View {
                             .multilineTextAlignment(.leading)
                     }
                 }
-                
+
                 Spacer()
-                
-                // Action Icons
+
                 HStack(spacing: 12) {
-                    // Maps Button
+
                     Button(action: {
                         openInMaps(address: tep.address ?? tep.name)
                     }) {
@@ -1257,8 +1184,7 @@ struct FireIncidentDetailView: View {
                             .font(.title3)
                             .frame(width: 24, height: 24)
                     }
-                    
-                    // Directions Button
+
                     Button(action: {
                         openDirections(address: tep.address ?? tep.name)
                     }) {
@@ -1280,15 +1206,14 @@ struct FireIncidentDetailView: View {
                 )
         )
     }
-    
-    // Helper functions for opening maps and directions
+
     private func openInMaps(address: String) {
         let encodedAddress = address.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         if let url = URL(string: "http://maps.apple.com/?q=\(encodedAddress)") {
             openURL(url)
         }
     }
-    
+
     private func openDirections(address: String) {
         let encodedAddress = address.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
         if let url = URL(string: "http://maps.apple.com/?daddr=\(encodedAddress)&dirflg=d") {
@@ -1296,8 +1221,6 @@ struct FireIncidentDetailView: View {
         }
     }
 }
-
-// MARK: - Supporting Views
 
 private struct EvacuationInfo {
     let orders: [String: [String]]
@@ -1309,13 +1232,13 @@ private struct EvacCard: View {
     let color: Color
     let dot: Color
     let lines: String
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("- \(title) -")
                 .font(.headline.weight(.semibold))
                                         .foregroundColor(.appTextPrimary)
-                                    
+
             HStack(alignment: .top, spacing: 8) {
                 Circle().fill(dot).frame(width: 8, height: 8).padding(.top, 6)
                 Text(lines)
@@ -1336,18 +1259,18 @@ struct FireMetricCard: View {
     let title: String
     let value: String
     let color: Color
-    
+
     var body: some View {
         VStack(spacing: 8) {
             Image(systemName: icon)
                 .foregroundColor(color)
                 .font(.title2)
-            
+
             Text(value)
                 .font(.title3)
                 .fontWeight(.bold)
                                         .foregroundColor(.appTextPrimary)
-                            
+
             Text(title)
                                 .font(.caption)
                 .foregroundColor(.appTextTertiary)
@@ -1370,19 +1293,19 @@ struct InfoRow: View {
     let icon: String
     let title: String
     let value: String
-    
+
     var body: some View {
         HStack {
             Image(systemName: icon)
                 .foregroundColor(.appPrimary)
                 .frame(width: 20)
-            
+
             Text(title)
                 .foregroundColor(.appTextSecondary)
                 .font(.subheadline)
-            
+
             Spacer()
-            
+
             Text(value)
                 .foregroundColor(.appTextPrimary)
                 .font(.subheadline)
@@ -1397,7 +1320,6 @@ struct InfoRow: View {
     WildfireMapPreview()
 }
 
-// Preview-safe static content to avoid network during canvas
 private struct WildfireMapPreview: View {
     @State private var cameraPosition: MapCameraPosition = .region(
         MKCoordinateRegion(
@@ -1409,7 +1331,7 @@ private struct WildfireMapPreview: View {
     private let sample: [CALFireIncident] = [
         CALFireIncident(
             name: "Dangerous Fire",
-            acresBurned: 15000, // Red - dangerous/intense
+            acresBurned: 15000,
             percentContained: 25,
             isActive: true,
             startedDate: "2025-08-01",
@@ -1421,7 +1343,7 @@ private struct WildfireMapPreview: View {
         ),
         CALFireIncident(
             name: "Medium Fire",
-            acresBurned: 3000, // Orange - active/medium
+            acresBurned: 3000,
             percentContained: 50,
             isActive: true,
             startedDate: "2025-08-02",
@@ -1433,7 +1355,7 @@ private struct WildfireMapPreview: View {
         ),
         CALFireIncident(
             name: "Small Fire",
-            acresBurned: 500, // Yellow - contained/active
+            acresBurned: 500,
             percentContained: 80,
             isActive: true,
             startedDate: "2025-08-03",
@@ -1445,7 +1367,7 @@ private struct WildfireMapPreview: View {
         ),
         CALFireIncident(
             name: "Contained Fire",
-            acresBurned: 80, // Gray - inactive
+            acresBurned: 80,
             percentContained: 100,
             isActive: false,
             startedDate: "2025-08-02",
@@ -1456,43 +1378,40 @@ private struct WildfireMapPreview: View {
             url: "https://example.com"
         )
     ]
-    
+
     private func flameColorForPreview(for incident: CALFireIncident) -> Color {
-        // If fire is inactive, always gray
+
         if !incident.isActive {
             return .gray
         }
-        
-        // For active fires: red for dangerous (>10k acres), orange for everything else
+
         let acres = incident.acresBurned
-        
+
         if acres > 10000 {
-            return .red      // Red - dangerous fires (>10k acres)
+            return .red
         } else {
-            return .orange   // Orange - all other active fires
+            return .orange
         }
     }
-    
+
     var body: some View {
         Map(position: $cameraPosition, interactionModes: [.pan]) {
             ForEach(sample) { i in
                 let coord = CLLocationCoordinate2D(latitude: i.latitude, longitude: i.longitude)
                 Annotation(i.name, coordinate: coord) {
                     Button(action: {
-                        // Preview action - could show alert or do nothing
+
                     }) {
                         ZStack {
-                            // Outer black background circle
+
                             Circle()
                                 .fill(Color.appSurface)
                                 .frame(width: 36, height: 36)
-                            
-                            // Inner semi-transparent circle for depth
+
                             Circle()
                                 .fill(Color.appCard)
                                 .frame(width: 32, height: 32)
-                            
-                            // Fire icon
+
                             Image(systemName: "flame.fill")
                                 .foregroundColor(flameColorForPreview(for: i))
                                 .font(.title2)

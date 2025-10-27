@@ -2,14 +2,10 @@ import SwiftUI
 import Foundation
 import Combine
 
-// MARK: - Education Service Manager
-/// Main service class managing all education functionality
-/// Follows Apple's Combine framework patterns and MVVM architecture
 @MainActor
 class EducationService: ObservableObject {
     static let shared = EducationService()
-    
-    // MARK: - Published Properties
+
     @Published var modules: [LearningModule] = []
     @Published var userProgress: UserProgress = UserProgress()
     @Published var currentModule: LearningModule?
@@ -17,58 +13,51 @@ class EducationService: ObservableObject {
     @Published var flashcards: [Flashcard] = []
     @Published var isLoading = false
     @Published var error: EducationError?
-    
-    // MARK: - Private Properties
+
     let persistenceService: EducationPersistenceService
     private let analyticsService: EducationAnalyticsService
     private let notificationService: EducationNotificationService
     private var cancellables = Set<AnyCancellable>()
-    
-    // MARK: - Initialization
+
     private init() {
         self.persistenceService = EducationPersistenceService()
         self.analyticsService = EducationAnalyticsService()
         self.notificationService = EducationNotificationService()
-        
+
         setupBindings()
         loadInitialData()
     }
-    
+
     private func setupBindings() {
-        // Auto-save user progress when it changes
+
         $userProgress
             .debounce(for: .seconds(1), scheduler: RunLoop.main)
             .sink { [weak self] progress in
                 self?.persistenceService.saveUserProgress(progress)
             }
             .store(in: &cancellables)
-        
-        // Update study streak daily
+
         NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)
             .sink { [weak self] _ in
                 self?.updateDailyStreak()
             }
             .store(in: &cancellables)
     }
-    
-    // MARK: - Data Loading
+
     func loadInitialData() {
         isLoading = true
-        
+
         Task {
             do {
-                // Load user progress
+
                 userProgress = try await persistenceService.loadUserProgress()
-                
-                // Load modules
+
                 modules = try await loadModules()
-                
-                // Load flashcards
+
                 flashcards = try await loadFlashcards()
-                
-                // Update unlocked modules based on progress
+
                 updateUnlockedModules()
-                
+
                 isLoading = false
             } catch {
                 self.error = EducationError.dataLoadingFailed(error.localizedDescription)
@@ -76,128 +65,117 @@ class EducationService: ObservableObject {
             }
         }
     }
-    
+
     private func loadModules() async throws -> [LearningModule] {
-        // In production, this would load from a remote API or local database
-        // For now, return comprehensive sample data
+
         return SampleEducationData.allModules
     }
-    
+
     private func loadFlashcards() async throws -> [Flashcard] {
         return SampleEducationData.allFlashcards
     }
-    
-    // MARK: - Module Management
+
     func startModule(_ module: LearningModule) {
         guard module.isUnlocked else {
             error = .moduleNotUnlocked
             return
         }
-        
+
         currentModule = module
         analyticsService.trackModuleStarted(module.id)
-        
-        // Mark as accessed
+
         var updatedModule = module
         updatedModule.lastAccessedDate = Date()
         updateModule(updatedModule)
     }
-    
+
     func completeLesson(_ lesson: Lesson, timeSpent: TimeInterval) {
         guard let moduleIndex = modules.firstIndex(where: { $0.id == lesson.moduleId }) else { return }
-        
+
         var module = modules[moduleIndex]
         module.completedLessons.insert(lesson.id)
-        
-        // Update lesson
+
         if let lessonIndex = module.lessons.firstIndex(where: { $0.id == lesson.id }) {
             module.lessons[lessonIndex].isCompleted = true
             module.lessons[lessonIndex].timeSpent += timeSpent
             module.lessons[lessonIndex].lastAccessedDate = Date()
         }
-        
-        // Award XP
+
         let xpGained = calculateLessonXP(lesson)
         userProgress.totalXP += xpGained
         userProgress.studyTimeToday += timeSpent
         userProgress.totalStudyTime += timeSpent
-        
+
         updateModule(module)
         checkForLevelUp()
         checkForAchievements(module: module)
-        
+
         analyticsService.trackLessonCompleted(lesson.id, timeSpent: timeSpent, xpGained: xpGained)
     }
-    
+
     func submitQuizAttempt(_ attempt: QuizAttempt) {
         guard let moduleIndex = modules.firstIndex(where: { $0.quiz?.id == attempt.quizId }) else { return }
-        
+
         var module = modules[moduleIndex]
         module.quizAttempts.append(attempt)
-        
-        // Award XP for quiz completion
+
         let xpGained = calculateQuizXP(attempt)
         userProgress.totalXP += xpGained
-        
+
         updateModule(module)
         checkForLevelUp()
         checkForAchievements(module: module)
-        
+
         analyticsService.trackQuizCompleted(attempt.quizId, score: attempt.score, xpGained: xpGained)
     }
-    
+
     private func updateModule(_ module: LearningModule) {
         if let index = modules.firstIndex(where: { $0.id == module.id }) {
             modules[index] = module
         }
-        
-        // Check if module is now completed
+
         if module.isCompleted && !userProgress.completedModules.contains(module.id) {
             userProgress.completedModules.insert(module.id)
             updateUnlockedModules()
-            
-            // Schedule celebration notification
+
             notificationService.scheduleModuleCompletionNotification(module)
         }
     }
-    
+
     private func updateUnlockedModules() {
         for i in 0..<modules.count {
             let module = modules[i]
             let prerequisitesMet = module.prerequisites.allSatisfy { prerequisiteId in
                 userProgress.completedModules.contains(prerequisiteId)
             }
-            
+
             if prerequisitesMet && !modules[i].isUnlocked {
                 modules[i].isUnlocked = true
                 userProgress.unlockedModules.insert(module.id)
-                
-                // Notify user of newly unlocked module
+
                 notificationService.scheduleModuleUnlockedNotification(module)
             }
         }
     }
-    
-    // MARK: - Progress Tracking
+
     private func calculateLessonXP(_ lesson: Lesson) -> Int {
         let baseXP = 10
-        let timeBonus = Int(lesson.estimatedDuration / 60) * 2 // 2 XP per minute
+        let timeBonus = Int(lesson.estimatedDuration / 60) * 2
         return baseXP + timeBonus
     }
-    
+
     private func calculateQuizXP(_ attempt: QuizAttempt) -> Int {
         let baseXP = 25
-        let scoreBonus = Int(attempt.score * 50) // Up to 50 bonus XP for perfect score
+        let scoreBonus = Int(attempt.score * 50)
         return baseXP + scoreBonus
     }
-    
+
     private func checkForLevelUp() {
         let newLevel = (userProgress.totalXP / 100) + 1
         if newLevel > userProgress.currentLevel {
             let oldLevel = userProgress.currentLevel
             userProgress.currentLevel = newLevel
-            
-            // Award level-up achievement
+
             let achievement = Achievement(
                 id: UUID(),
                 title: "Level \(newLevel) Reached!",
@@ -207,19 +185,19 @@ class EducationService: ObservableObject {
                 category: .completion
             )
             userProgress.achievements.append(achievement)
-            
+
             notificationService.scheduleLevelUpNotification(oldLevel: oldLevel, newLevel: newLevel)
             analyticsService.trackLevelUp(newLevel)
         }
     }
-    
+
     private func checkForAchievements(module: LearningModule) {
-        // Check for various achievements
+
         checkStreakAchievements()
         checkCompletionAchievements()
         checkMasteryAchievements(module: module)
     }
-    
+
     private func checkStreakAchievements() {
         let streakMilestones = [7, 14, 30, 60, 100]
         for milestone in streakMilestones {
@@ -237,11 +215,11 @@ class EducationService: ObservableObject {
             }
         }
     }
-    
+
     private func checkCompletionAchievements() {
         let completedCount = userProgress.completedModules.count
         let totalModules = modules.count
-        
+
         if completedCount == totalModules && completedCount > 0 {
             let achievement = Achievement(
                 id: UUID(),
@@ -254,13 +232,13 @@ class EducationService: ObservableObject {
             userProgress.achievements.append(achievement)
         }
     }
-    
+
     private func checkMasteryAchievements(module: LearningModule) {
-        // Check for perfect quiz scores
+
         if let quiz = module.quiz,
            let bestAttempt = module.quizAttempts.max(by: { $0.score < $1.score }),
-           bestAttempt.score >= 0.95 { // 95% or higher
-            
+           bestAttempt.score >= 0.95 {
+
             let achievement = Achievement(
                 id: UUID(),
                 title: "Perfect Score",
@@ -272,59 +250,57 @@ class EducationService: ObservableObject {
             userProgress.achievements.append(achievement)
         }
     }
-    
+
     private func updateDailyStreak() {
         let calendar = Calendar.current
         let today = Date()
-        
+
         if let lastStudyDate = userProgress.lastStudyDate {
             if calendar.isDate(lastStudyDate, inSameDayAs: today) {
-                // Already studied today, no change
+
                 return
             } else if calendar.isDate(lastStudyDate, inSameDayAs: calendar.date(byAdding: .day, value: -1, to: today)!) {
-                // Studied yesterday, continue streak
+
                 userProgress.currentStreak += 1
                 userProgress.longestStreak = max(userProgress.longestStreak, userProgress.currentStreak)
             } else {
-                // Streak broken
+
                 userProgress.currentStreak = 0
             }
         }
-        
-        // Reset daily study time
+
         userProgress.studyTimeToday = 0
     }
-    
-    // MARK: - Flashcard System
+
     func getFlashcardsForReview() -> [Flashcard] {
         return flashcards.filter { $0.nextReviewDate <= Date() && !$0.isLearned }
     }
-    
+
     func reviewFlashcard(_ flashcard: Flashcard, difficulty: FlashcardDifficulty) {
         guard let index = flashcards.firstIndex(where: { $0.id == flashcard.id }) else { return }
-        
+
         var updatedCard = flashcard
         updatedCard = updateFlashcardSpacedRepetition(updatedCard, difficulty: difficulty)
         flashcards[index] = updatedCard
-        
+
         analyticsService.trackFlashcardReviewed(flashcard.id, difficulty: difficulty)
     }
-    
+
     private func updateFlashcardSpacedRepetition(_ card: Flashcard, difficulty: FlashcardDifficulty) -> Flashcard {
         var updatedCard = card
-        
+
         switch difficulty {
         case .again:
             updatedCard.repetitions = 0
             updatedCard.interval = 1
             updatedCard.nextReviewDate = Calendar.current.date(byAdding: .day, value: 1, to: Date()) ?? Date()
-            
+
         case .hard:
             updatedCard.easeFactor = max(1.3, updatedCard.easeFactor - 0.15)
             updatedCard.repetitions += 1
             updatedCard.interval = max(1, Int(Double(updatedCard.interval) * updatedCard.easeFactor * 0.8))
             updatedCard.nextReviewDate = Calendar.current.date(byAdding: .day, value: updatedCard.interval, to: Date()) ?? Date()
-            
+
         case .good:
             updatedCard.repetitions += 1
             if updatedCard.repetitions <= 2 {
@@ -333,48 +309,45 @@ class EducationService: ObservableObject {
                 updatedCard.interval = Int(Double(updatedCard.interval) * updatedCard.easeFactor)
             }
             updatedCard.nextReviewDate = Calendar.current.date(byAdding: .day, value: updatedCard.interval, to: Date()) ?? Date()
-            
+
         case .easy:
             updatedCard.easeFactor += 0.15
             updatedCard.repetitions += 1
             updatedCard.interval = Int(Double(updatedCard.interval) * updatedCard.easeFactor * 1.3)
             updatedCard.nextReviewDate = Calendar.current.date(byAdding: .day, value: updatedCard.interval, to: Date()) ?? Date()
         }
-        
-        // Mark as learned if interval is very long
+
         if updatedCard.interval > 100 {
             updatedCard.isLearned = true
         }
-        
+
         return updatedCard
     }
-    
-    // MARK: - Bookmarks and Notes
+
     func toggleBookmark(lessonId: UUID, moduleId: UUID) {
         guard let moduleIndex = modules.firstIndex(where: { $0.id == moduleId }) else { return }
-        
+
         var module = modules[moduleIndex]
         if module.bookmarkedLessons.contains(lessonId) {
             module.bookmarkedLessons.remove(lessonId)
         } else {
             module.bookmarkedLessons.insert(lessonId)
         }
-        
+
         updateModule(module)
     }
-    
+
     func updateLessonNotes(lessonId: UUID, moduleId: UUID, notes: String) {
         guard let moduleIndex = modules.firstIndex(where: { $0.id == moduleId }),
               let lessonIndex = modules[moduleIndex].lessons.firstIndex(where: { $0.id == lessonId }) else { return }
-        
+
         modules[moduleIndex].lessons[lessonIndex].userNotes = notes
         persistenceService.saveLessonNotes(lessonId: lessonId, notes: notes)
     }
-    
-    // MARK: - Search and Filtering
+
     func searchModules(query: String) -> [LearningModule] {
         guard !query.isEmpty else { return modules }
-        
+
         return modules.filter { module in
             module.title.localizedCaseInsensitiveContains(query) ||
             module.description.localizedCaseInsensitiveContains(query) ||
@@ -383,7 +356,7 @@ class EducationService: ObservableObject {
             }
         }
     }
-    
+
     func filterModules(by category: ModuleCategory? = nil, difficulty: DifficultyLevel? = nil, completed: Bool? = nil) -> [LearningModule] {
         return modules.filter { module in
             if let category = category, module.category != category { return false }
@@ -392,13 +365,12 @@ class EducationService: ObservableObject {
             return true
         }
     }
-    
-    // MARK: - Statistics
+
     func getStudyStatistics() -> StudyStatistics {
         let totalLessons = modules.flatMap { $0.lessons }.count
         let completedLessons = modules.flatMap { $0.completedLessons }.count
         let averageScore = modules.compactMap { $0.quiz?.bestScore }.reduce(0, +) / Double(max(1, modules.count))
-        
+
         return StudyStatistics(
             totalModules: modules.count,
             completedModules: userProgress.completedModules.count,
@@ -412,89 +384,82 @@ class EducationService: ObservableObject {
     }
 }
 
-// MARK: - Supporting Services
-
-/// Handles local persistence of education data
 class EducationPersistenceService {
     private let userDefaults = UserDefaults.standard
     private let fileManager = FileManager.default
-    
+
     func saveUserProgress(_ progress: UserProgress) {
         if let encoded = try? JSONEncoder().encode(progress) {
             userDefaults.set(encoded, forKey: "UserProgress")
         }
     }
-    
+
     func loadUserProgress() async throws -> UserProgress {
         guard let data = userDefaults.data(forKey: "UserProgress"),
               let progress = try? JSONDecoder().decode(UserProgress.self, from: data) else {
-            return UserProgress() // Return default if no saved data
+            return UserProgress()
         }
         return progress
     }
-    
+
     func saveLessonNotes(lessonId: UUID, notes: String) {
         userDefaults.set(notes, forKey: "LessonNotes_\(lessonId)")
     }
-    
+
     func loadLessonNotes(lessonId: UUID) -> String {
         return userDefaults.string(forKey: "LessonNotes_\(lessonId)") ?? ""
     }
 }
 
-/// Tracks user analytics and learning patterns
 class EducationAnalyticsService {
     func trackModuleStarted(_ moduleId: UUID) {
-        // In production, send to analytics service
+
         print("📊 Module started: \(moduleId)")
     }
-    
+
     func trackLessonCompleted(_ lessonId: UUID, timeSpent: TimeInterval, xpGained: Int) {
         print("📊 Lesson completed: \(lessonId), time: \(timeSpent)s, XP: \(xpGained)")
     }
-    
+
     func trackQuizCompleted(_ quizId: UUID, score: Double, xpGained: Int) {
         print("📊 Quiz completed: \(quizId), score: \(score), XP: \(xpGained)")
     }
-    
+
     func trackFlashcardReviewed(_ cardId: UUID, difficulty: FlashcardDifficulty) {
         print("📊 Flashcard reviewed: \(cardId), difficulty: \(difficulty)")
     }
-    
+
     func trackLevelUp(_ newLevel: Int) {
         print("📊 Level up: \(newLevel)")
     }
 }
 
-/// Manages educational notifications and reminders
 class EducationNotificationService {
     func scheduleModuleCompletionNotification(_ module: LearningModule) {
-        // Schedule local notification
+
         print("🔔 Module completed: \(module.title)")
     }
-    
+
     func scheduleModuleUnlockedNotification(_ module: LearningModule) {
         print("🔔 Module unlocked: \(module.title)")
     }
-    
+
     func scheduleLevelUpNotification(oldLevel: Int, newLevel: Int) {
         print("🔔 Level up: \(oldLevel) → \(newLevel)")
     }
-    
+
     func scheduleStudyReminder() {
-        // Schedule daily study reminder
+
         print("🔔 Time to study!")
     }
 }
-
-// MARK: - Supporting Types
 
 enum EducationError: LocalizedError {
     case dataLoadingFailed(String)
     case moduleNotUnlocked
     case quizNotAvailable
     case networkError(String)
-    
+
     var errorDescription: String? {
         switch self {
         case .dataLoadingFailed(let message):
@@ -514,7 +479,7 @@ enum FlashcardDifficulty: String, CaseIterable {
     case hard = "Hard"
     case good = "Good"
     case easy = "Easy"
-    
+
     var color: Color {
         switch self {
         case .again: return .appError
@@ -534,19 +499,18 @@ struct StudyStatistics {
     let currentStreak: Int
     let averageQuizScore: Double
     let totalAchievements: Int
-    
+
     var moduleCompletionRate: Double {
         guard totalModules > 0 else { return 0 }
         return Double(completedModules) / Double(totalModules)
     }
-    
+
     var lessonCompletionRate: Double {
         guard totalLessons > 0 else { return 0 }
         return Double(completedLessons) / Double(totalLessons)
     }
 }
 
-// MARK: - Sample Data Provider
 struct SampleEducationData {
     static let allModules: [LearningModule] = [
         createWildfireBasicsModule(),
@@ -554,9 +518,9 @@ struct SampleEducationData {
         createEmergencyPlanningModule(),
         createFireBehaviorModule()
     ]
-    
+
     static let allFlashcards: [Flashcard] = createSampleFlashcards()
-    
+
     private static func createWildfireBasicsModule() -> LearningModule {
         LearningModule(
             id: UUID(),
@@ -564,7 +528,7 @@ struct SampleEducationData {
             description: "Understanding fire behavior, causes, and basic safety principles",
             category: .basics,
             difficulty: .beginner,
-            estimatedDuration: 900, // 15 minutes
+            estimatedDuration: 900,
             iconName: "flame.fill",
             colorScheme: .primary,
             prerequisites: [],
@@ -579,10 +543,7 @@ struct SampleEducationData {
             bookmarkedLessons: []
         )
     }
-    
-    // Additional module creation methods would follow similar patterns...
-    // For brevity, I'll provide the structure for one complete module
-    
+
     private static func createBasicsLessons() -> [Lesson] {
         [
             Lesson(
@@ -605,7 +566,7 @@ struct SampleEducationData {
             )
         ]
     }
-    
+
     private static func createBasicsQuiz() -> Quiz {
         Quiz(
             id: UUID(),
@@ -709,7 +670,7 @@ struct SampleEducationData {
             maxAttempts: 3
         )
     }
-    
+
     private static func createBasicsResources() -> [Resource] {
         [
             Resource(
@@ -721,9 +682,7 @@ struct SampleEducationData {
             )
         ]
     }
-    
-    // Placeholder methods for other modules
-    // MARK: - Home Safety & Defensible Space Module
+
     private static func createHomeSafetyModule() -> LearningModule {
         LearningModule(
             id: UUID(),
@@ -731,7 +690,7 @@ struct SampleEducationData {
             description: "Protect your home with proper landscaping, materials, and maintenance practices",
             category: .prevention,
             difficulty: .intermediate,
-            estimatedDuration: 1200, // 20 minutes
+            estimatedDuration: 1200,
             iconName: "house.fill",
             colorScheme: .secondary,
             prerequisites: [],
@@ -746,8 +705,7 @@ struct SampleEducationData {
             bookmarkedLessons: []
         )
     }
-    
-    // MARK: - Emergency Planning Module
+
     private static func createEmergencyPlanningModule() -> LearningModule {
         LearningModule(
             id: UUID(),
@@ -755,7 +713,7 @@ struct SampleEducationData {
             description: "Create evacuation plans, emergency kits, and communication strategies",
             category: .emergency,
             difficulty: .intermediate,
-            estimatedDuration: 1500, // 25 minutes
+            estimatedDuration: 1500,
             iconName: "exclamationmark.triangle.fill",
             colorScheme: .warning,
             prerequisites: [],
@@ -770,8 +728,7 @@ struct SampleEducationData {
             bookmarkedLessons: []
         )
     }
-    
-    // MARK: - Fire Behavior & Science Module
+
     private static func createFireBehaviorModule() -> LearningModule {
         LearningModule(
             id: UUID(),
@@ -779,7 +736,7 @@ struct SampleEducationData {
             description: "Advanced understanding of fire dynamics, weather, and terrain effects",
             category: .advanced,
             difficulty: .advanced,
-            estimatedDuration: 1800, // 30 minutes
+            estimatedDuration: 1800,
             iconName: "wind",
             colorScheme: .error,
             prerequisites: [],
@@ -794,7 +751,7 @@ struct SampleEducationData {
             bookmarkedLessons: []
         )
     }
-    
+
     private static func createSampleFlashcards() -> [Flashcard] {
         [
             Flashcard(
@@ -959,8 +916,7 @@ struct SampleEducationData {
             )
         ]
     }
-    
-    // MARK: - Home Safety Module Content
+
     private static func createHomeSafetyLessons() -> [Lesson] {
         [
             Lesson(
@@ -1020,7 +976,7 @@ struct SampleEducationData {
             )
         ]
     }
-    
+
     private static func createHomeSafetyQuiz() -> Quiz {
         Quiz(
             id: UUID(),
@@ -1114,7 +1070,7 @@ struct SampleEducationData {
             maxAttempts: 3
         )
     }
-    
+
     private static func createHomeSafetyResources() -> [Resource] {
         [
             Resource(
@@ -1133,8 +1089,7 @@ struct SampleEducationData {
             )
         ]
     }
-    
-    // MARK: - Emergency Planning Module Content
+
     private static func createEmergencyPlanningLessons() -> [Lesson] {
         [
             Lesson(
@@ -1194,7 +1149,7 @@ struct SampleEducationData {
             )
         ]
     }
-    
+
     private static func createEmergencyPlanningQuiz() -> Quiz {
         Quiz(
             id: UUID(),
@@ -1288,7 +1243,7 @@ struct SampleEducationData {
             maxAttempts: 3
         )
     }
-    
+
     private static func createEmergencyPlanningResources() -> [Resource] {
         [
             Resource(
@@ -1307,8 +1262,7 @@ struct SampleEducationData {
             )
         ]
     }
-    
-    // MARK: - Fire Behavior Module Content
+
     private static func createFireBehaviorLessons() -> [Lesson] {
         [
             Lesson(
@@ -1368,7 +1322,7 @@ struct SampleEducationData {
             )
         ]
     }
-    
+
     private static func createFireBehaviorQuiz() -> Quiz {
         Quiz(
             id: UUID(),
@@ -1462,7 +1416,7 @@ struct SampleEducationData {
             maxAttempts: 3
         )
     }
-    
+
     private static func createFireBehaviorResources() -> [Resource] {
         [
             Resource(
@@ -1481,21 +1435,20 @@ struct SampleEducationData {
             )
         ]
     }
-    
-    // MARK: - Module-Specific Flashcards
+
     private static func createBasicsFlashcards() -> [Flashcard] {
-        return Array(createSampleFlashcards().prefix(5)) // First 5 flashcards for basics
+        return Array(createSampleFlashcards().prefix(5))
     }
-    
+
     private static func createHomeSafetyFlashcards() -> [Flashcard] {
-        return Array(createSampleFlashcards().dropFirst(5).prefix(5)) // Next 5 flashcards
+        return Array(createSampleFlashcards().dropFirst(5).prefix(5))
     }
-    
+
     private static func createEmergencyPlanningFlashcards() -> [Flashcard] {
-        return Array(createSampleFlashcards().dropFirst(10).prefix(5)) // Next 5 flashcards
+        return Array(createSampleFlashcards().dropFirst(10).prefix(5))
     }
-    
+
     private static func createFireBehaviorFlashcards() -> [Flashcard] {
-        return Array(createSampleFlashcards().dropFirst(15).prefix(5)) // Last 5 flashcards
+        return Array(createSampleFlashcards().dropFirst(15).prefix(5))
     }
 }

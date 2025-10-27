@@ -1,10 +1,6 @@
 import SwiftUI
 import Foundation
 
-// MARK: - Core Education Data Models
-// Following Apple's Swift API Design Guidelines
-
-/// Represents a complete learning module with lessons, quizzes, and progress tracking
 struct LearningModule: Identifiable, Codable, Equatable {
     let id: UUID
     let title: String
@@ -14,32 +10,30 @@ struct LearningModule: Identifiable, Codable, Equatable {
     let estimatedDuration: TimeInterval
     let iconName: String
     let colorScheme: ModuleColorScheme
-    let prerequisites: [UUID] // Other module IDs required before this one
-    
+    let prerequisites: [UUID]
+
     var lessons: [Lesson]
     var quiz: Quiz?
     var flashcards: [Flashcard]?
     var resources: [Resource]
-    
-    // Progress tracking
+
     var isUnlocked: Bool
     var completedLessons: Set<UUID>
     var quizAttempts: [QuizAttempt]
     var lastAccessedDate: Date?
     var bookmarkedLessons: Set<UUID>
-    
-    // Computed properties
+
     var progress: Double {
         guard !lessons.isEmpty else { return 0.0 }
         return Double(completedLessons.count) / Double(lessons.count)
     }
-    
+
     var isCompleted: Bool {
         let lessonsCompleted = completedLessons.count == lessons.count
-        let quizPassed = quiz?.bestScore ?? 0 >= 0.7 // 70% passing grade
+        let quizPassed = quiz?.bestScore ?? 0 >= 0.7
         return lessonsCompleted && quizPassed
     }
-    
+
     var badge: String? {
         if isCompleted {
             switch difficulty {
@@ -50,34 +44,31 @@ struct LearningModule: Identifiable, Codable, Equatable {
         }
         return nil
     }
-    
+
     var formattedDuration: String {
         let minutes = Int(estimatedDuration / 60)
         return "\(minutes) min"
     }
 }
 
-/// Individual lesson within a module
 struct Lesson: Identifiable, Codable, Equatable {
     let id: UUID
     let moduleId: UUID
     let title: String
     let content: LessonContent
     let estimatedDuration: TimeInterval
-    
-    // Progress tracking
+
     var isCompleted: Bool
     var timeSpent: TimeInterval = 0
     var lastAccessedDate: Date?
     var userNotes: String
-    
+
     var formattedReadingTime: String {
         let minutes = Int(estimatedDuration / 60)
         return "\(minutes) min read"
     }
 }
 
-/// Rich content for lessons supporting multiple media types
 struct LessonContent: Codable, Equatable {
     let sections: [ContentSection]
 }
@@ -90,7 +81,6 @@ struct ContentSection: Identifiable, Codable, Equatable {
     let mediaURL: URL?
 }
 
-/// Interactive quiz system
 struct Quiz: Identifiable, Codable, Equatable {
     let id: UUID
     let moduleId: UUID
@@ -98,12 +88,11 @@ struct Quiz: Identifiable, Codable, Equatable {
     let description: String
     let questions: [QuizQuestion]
     let timeLimit: TimeInterval?
-    let passingScore: Double // 0.0 to 1.0
+    let passingScore: Double
     let maxAttempts: Int
-    
-    // Best score from all attempts
+
     var bestScore: Double {
-        // This would be calculated from quiz attempts
+
         return 0.0
     }
 }
@@ -112,11 +101,11 @@ struct QuizQuestion: Identifiable, Codable, Equatable {
     let id: UUID
     let question: String
     let type: QuestionType
-    let options: [String] // For multiple choice
-    let correctAnswers: [Int] // Indices of correct answers
+    let options: [String]
+    let correctAnswers: [Int]
     let explanation: String
     let points: Int
-    let mediaURL: URL? // Optional image/video
+    let mediaURL: URL?
 }
 
 struct QuizAttempt: Identifiable, Codable, Equatable {
@@ -124,12 +113,11 @@ struct QuizAttempt: Identifiable, Codable, Equatable {
     let quizId: UUID
     let startDate: Date
     let endDate: Date?
-    let answers: [UUID: [Int]] // QuestionId: Selected answer indices
+    let answers: [UUID: [Int]]
     let score: Double
     let isCompleted: Bool
 }
 
-/// Flashcard system for spaced repetition learning
 struct Flashcard: Identifiable, Codable, Equatable {
     let id: UUID
     let moduleId: UUID
@@ -137,8 +125,7 @@ struct Flashcard: Identifiable, Codable, Equatable {
     let back: String
     let difficulty: DifficultyLevel
     let tags: [String]
-    
-    // Spaced repetition data
+
     var easeFactor: Double = 2.5
     var interval: Int = 1
     var repetitions: Int = 0
@@ -146,7 +133,6 @@ struct Flashcard: Identifiable, Codable, Equatable {
     var isLearned: Bool = false
 }
 
-/// Learning resources and references
 struct Resource: Identifiable, Codable, Equatable {
     let id: UUID
     let title: String
@@ -155,7 +141,6 @@ struct Resource: Identifiable, Codable, Equatable {
     let url: String?
 }
 
-/// User progress and achievements
 struct UserProgress: Codable, Equatable {
     var currentStreak: Int = 0
     var longestStreak: Int = 0
@@ -169,12 +154,11 @@ struct UserProgress: Codable, Equatable {
     var lastStudyDate: Date?
     var preferredStudyTime: StudyTimePreference = .flexible
     var dailyGoalMinutes: Int = 15
-    
-    // Computed properties
+
     var xpForNextLevel: Int {
-        return currentLevel * 100 // Simple progression
+        return currentLevel * 100
     }
-    
+
     var levelProgress: Double {
         let currentLevelXP = (currentLevel - 1) * 100
         let nextLevelXP = currentLevel * 100
@@ -192,8 +176,6 @@ struct Achievement: Identifiable, Codable, Equatable {
     let category: AchievementCategory
 }
 
-// MARK: - Enums
-
 enum ModuleCategory: String, CaseIterable, Codable {
     case basics = "Wildfire Basics"
     case prevention = "Prevention"
@@ -201,7 +183,7 @@ enum ModuleCategory: String, CaseIterable, Codable {
     case advanced = "Advanced Topics"
     case recovery = "Recovery"
     case community = "Community Safety"
-    
+
     var iconName: String {
         switch self {
         case .basics: return "flame.fill"
@@ -218,7 +200,7 @@ enum DifficultyLevel: String, CaseIterable, Codable {
     case beginner = "Beginner"
     case intermediate = "Intermediate"
     case advanced = "Advanced"
-    
+
     var color: Color {
         switch self {
         case .beginner: return .appSuccess
@@ -230,7 +212,7 @@ enum DifficultyLevel: String, CaseIterable, Codable {
 
 enum ModuleColorScheme: String, Codable {
     case primary, secondary, accent, success, warning, error
-    
+
     var colors: (primary: Color, secondary: Color) {
         switch self {
         case .primary: return (.appPrimary, .appSecondary)
@@ -256,7 +238,7 @@ enum QuestionType: String, Codable {
 
 enum ResourceType: String, Codable {
     case article, video, podcast, tool, checklist, infographic, externalLink, pdf
-    
+
     var iconName: String {
         switch self {
         case .article: return "doc.text.fill"
@@ -290,10 +272,8 @@ enum InteractiveElement: Codable, Equatable {
     case calculator(String)
 }
 
-// MARK: - Extensions
-
 extension LearningModule {
-    /// Creates a sample module for preview/testing
+
     static func sample(id: UUID = UUID()) -> LearningModule {
         LearningModule(
             id: id,
@@ -301,7 +281,7 @@ extension LearningModule {
             description: "Understanding fire behavior, causes, and basic safety principles",
             category: .basics,
             difficulty: .beginner,
-            estimatedDuration: 900, // 15 minutes
+            estimatedDuration: 900,
             iconName: "flame.fill",
             colorScheme: .primary,
             prerequisites: [],
@@ -349,7 +329,7 @@ extension Quiz {
             title: "Wildfire Basics Quiz",
             description: "Test your knowledge of wildfire fundamentals",
             questions: [QuizQuestion.sample()],
-            timeLimit: 600, // 10 minutes
+            timeLimit: 600,
             passingScore: 0.7,
             maxAttempts: 3
         )
@@ -363,7 +343,7 @@ extension QuizQuestion {
             question: "What percentage of wildfires are caused by human activities?",
             type: .multipleChoice,
             options: ["50%", "75%", "90%", "95%"],
-            correctAnswers: [2], // 90%
+            correctAnswers: [2],
             explanation: "According to the National Park Service, human activities cause about 90% of wildfires.",
             points: 10,
             mediaURL: nil

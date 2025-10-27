@@ -1,8 +1,6 @@
 import Foundation
 import CoreLocation
-// import MapKit // temporarily disabled
 
-// MARK: - Shelter Models
 struct EmergencyShelter: Identifiable, Codable {
     let id = UUID()
     let name: String
@@ -11,16 +9,16 @@ struct EmergencyShelter: Identifiable, Codable {
     let capacity: String
     let status: ShelterStatus
     let type: ShelterType
-    let distance: Double? // in miles
+    let distance: Double?
     let phone: String?
     let amenities: [String]
     let lastUpdated: Date
-    
+
     enum CodingKeys: String, CodingKey {
         case name, address, capacity, status, type, phone, amenities, lastUpdated
         case latitude, longitude
     }
-    
+
     init(name: String, address: String, coordinates: CLLocationCoordinate2D, capacity: String, status: ShelterStatus, type: ShelterType, distance: Double? = nil, phone: String? = nil, amenities: [String] = [], lastUpdated: Date = Date()) {
         self.name = name
         self.address = address
@@ -33,7 +31,7 @@ struct EmergencyShelter: Identifiable, Codable {
         self.amenities = amenities
         self.lastUpdated = lastUpdated
     }
-    
+
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         name = try container.decode(String.self, forKey: .name)
@@ -44,13 +42,13 @@ struct EmergencyShelter: Identifiable, Codable {
         phone = try container.decodeIfPresent(String.self, forKey: .phone)
         amenities = try container.decode([String].self, forKey: .amenities)
         lastUpdated = try container.decode(Date.self, forKey: .lastUpdated)
-        
+
         let latitude = try container.decode(Double.self, forKey: .latitude)
         let longitude = try container.decode(Double.self, forKey: .longitude)
         coordinates = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
         distance = nil
     }
-    
+
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(name, forKey: .name)
@@ -72,7 +70,7 @@ enum ShelterStatus: String, Codable, CaseIterable {
     case full = "Full"
     case limited = "Limited Capacity"
     case unknown = "Unknown"
-    
+
     var color: String {
         switch self {
         case .open: return "green"
@@ -90,7 +88,7 @@ enum ShelterType: String, Codable, CaseIterable {
     case medical = "Medical Needs"
     case family = "Family Shelter"
     case temporary = "Temporary"
-    
+
     var icon: String {
         switch self {
         case .general: return "house.fill"
@@ -102,34 +100,31 @@ enum ShelterType: String, Codable, CaseIterable {
     }
 }
 
-// MARK: - Shelter Service
 class ShelterService: ObservableObject {
     @Published var shelters: [EmergencyShelter] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
     @Published var lastUpdated: Date?
-    
+
     private var userLocation: CLLocation?
-    
+
     init() {
-        // Empty init - location will be set from the view
+
     }
-    
-    // MARK: - Public Methods
-    
+
     func fetchNearbyShelters(userLocation: CLLocation? = nil) {
         if let location = userLocation {
             self.userLocation = location
         }
-        
+
         guard let userLocation = self.userLocation else {
             errorMessage = "Location not available"
             return
         }
-        
+
         isLoading = true
         errorMessage = nil
-        
+
         Task {
             do {
                 let fetchedShelters = try await fetchSheltersFromMultipleSources(near: userLocation)
@@ -142,35 +137,29 @@ class ShelterService: ObservableObject {
                 await MainActor.run {
                     self.errorMessage = error.localizedDescription
                     self.isLoading = false
-                    // Fallback to sample data if API fails
+
                     self.shelters = self.createSampleShelters(near: userLocation)
                 }
             }
         }
     }
-    
-    // Remove the requestLocationAndFetch method since location is handled by the view
-    
-    // MARK: - API Integration
-    
+
     func fetchSheltersFromMultipleSources(near location: CLLocation) async throws -> [EmergencyShelter] {
-        // Try multiple sources in parallel
+
         async let redCrossShelters = fetchRedCrossShelters(near: location)
         async let femaDisasterShelters = fetchFEMADisasterShelters(near: location)
         async let localEmergencyShelters = fetchLocalEmergencyShelters(near: location)
-        
-        // Combine results from all sources
+
         let allShelters = try await [
             redCrossShelters,
             femaDisasterShelters,
             localEmergencyShelters
         ].flatMap { $0 }
-        
-        // Calculate distances and sort by proximity
+
         let sheltersWithDistance = allShelters.map { shelter -> EmergencyShelter in
             let shelterLocation = CLLocation(latitude: shelter.coordinates.latitude, longitude: shelter.coordinates.longitude)
-            let distance = location.distance(from: shelterLocation) * 0.000621371 // Convert to miles
-            
+            let distance = location.distance(from: shelterLocation) * 0.000621371
+
             return EmergencyShelter(
                 name: shelter.name,
                 address: shelter.address,
@@ -184,49 +173,40 @@ class ShelterService: ObservableObject {
                 lastUpdated: shelter.lastUpdated
             )
         }
-        
-        // Sort by distance and return closest 20
+
         return Array(sheltersWithDistance.sorted { $0.distance ?? Double.greatestFiniteMagnitude < $1.distance ?? Double.greatestFiniteMagnitude }.prefix(20))
     }
-    
-    // MARK: - Red Cross Shelters API
+
     private func fetchRedCrossShelters(near location: CLLocation) async throws -> [EmergencyShelter] {
-        // Red Cross shelter API (this would be a real API endpoint)
+
         let urlString = "https://www.redcross.org/api/shelters"
         guard URL(string: urlString) != nil else { throw ShelterError.invalidURL }
-        
-        // For now, return sample data since we don't have direct API access
-        // In a real implementation, you would call the actual Red Cross API
+
         return createRedCrossSampleShelters(near: location)
     }
-    
-    // MARK: - FEMA Disaster Shelters API
+
     private func fetchFEMADisasterShelters(near location: CLLocation) async throws -> [EmergencyShelter] {
-        // FEMA disaster shelter API
+
         let urlString = "https://www.fema.gov/api/open/v2/DisasterDeclarationsSummaries"
         guard URL(string: urlString) != nil else { throw ShelterError.invalidURL }
-        
-        // For now, return sample data
+
         return createFEMASampleShelters(near: location)
     }
-    
-    // MARK: - Local Emergency Shelters (MapKit Search disabled)
+
     private func fetchLocalEmergencyShelters(near location: CLLocation) async throws -> [EmergencyShelter] {
-        // Map-based local search disabled for previews; return local samples
+
         return createLocalSampleShelters(near: location)
     }
-    
-    // MARK: - Sample Data (Fallback)
+
     func createSampleShelters(near location: CLLocation) -> [EmergencyShelter] {
         let sampleShelters = createRedCrossSampleShelters(near: location) +
                            createFEMASampleShelters(near: location) +
                            createLocalSampleShelters(near: location)
-        
-        // Calculate distances
+
         return sampleShelters.map { shelter in
             let shelterLocation = CLLocation(latitude: shelter.coordinates.latitude, longitude: shelter.coordinates.longitude)
             let distance = location.distance(from: shelterLocation) * 0.000621371
-            
+
             return EmergencyShelter(
                 name: shelter.name,
                 address: shelter.address,
@@ -241,11 +221,10 @@ class ShelterService: ObservableObject {
             )
         }.sorted { $0.distance ?? Double.greatestFiniteMagnitude < $1.distance ?? Double.greatestFiniteMagnitude }
     }
-    
+
     private func createRedCrossSampleShelters(near location: CLLocation) -> [EmergencyShelter] {
         let baseCoordinate = location.coordinate
-        
-        // Create location-specific identifiers based on coordinates
+
         let locationHash = abs(Int(baseCoordinate.latitude * 1000) + Int(baseCoordinate.longitude * 1000))
         let shelterVariations = [
             ("North", "Community Center", "Main St", ["Food", "Medical Care", "Bedding", "WiFi"]),
@@ -254,10 +233,10 @@ class ShelterService: ObservableObject {
             ("West", "Emergency Shelter", "Elm Dr", ["Food", "Medical Care", "Child Care", "WiFi"]),
             ("Central", "Relief Center", "Cedar Blvd", ["Food", "Bedding", "Medical Care", "Pet Area"])
         ]
-        
+
         let variation = shelterVariations[locationHash % shelterVariations.count]
         let streetNumber = 100 + (locationHash % 900)
-        
+
         return [
             EmergencyShelter(
                 name: "Red Cross \(variation.0) \(variation.1)",
@@ -289,11 +268,10 @@ class ShelterService: ObservableObject {
             )
         ]
     }
-    
+
     private func createFEMASampleShelters(near location: CLLocation) -> [EmergencyShelter] {
         let baseCoordinate = location.coordinate
-        
-        // Create location-specific identifiers
+
         let locationHash = abs(Int(baseCoordinate.latitude * 1000) + Int(baseCoordinate.longitude * 1000))
         let femaFacilities = [
             ("Disaster Relief Center", "Federal Way"),
@@ -302,10 +280,10 @@ class ShelterService: ObservableObject {
             ("Disaster Recovery Station", "Relief Rd"),
             ("Emergency Operations Center", "Federal Ave")
         ]
-        
+
         let facility = femaFacilities[locationHash % femaFacilities.count]
         let streetNumber = 1000 + (locationHash % 9000)
-        
+
         return [
             EmergencyShelter(
                 name: "FEMA \(facility.0)",
@@ -323,23 +301,22 @@ class ShelterService: ObservableObject {
             )
         ]
     }
-    
+
     private func createLocalSampleShelters(near location: CLLocation) -> [EmergencyShelter] {
         let baseCoordinate = location.coordinate
-        
-        // Create location-specific identifiers
+
         let locationHash = abs(Int(baseCoordinate.latitude * 1000) + Int(baseCoordinate.longitude * 1000))
         let schoolNames = ["Community High School", "Riverside Elementary", "Mountain View School", "Valley High", "Oakwood Academy"]
         let centerNames = ["Community Center", "Recreation Center", "Civic Center", "Cultural Center", "Activity Center"]
         let streetNames = ["Education Blvd", "School St", "Learning Ave", "Academic Dr", "Campus Rd"]
         let townNames = ["Local Town", "Riverside", "Mountain View", "Valley Springs", "Oakwood"]
-        
+
         let schoolName = schoolNames[locationHash % schoolNames.count]
         let centerName = centerNames[locationHash % centerNames.count]
         let streetName = streetNames[locationHash % streetNames.count]
         let townName = townNames[locationHash % townNames.count]
         let streetNumber = 100 + (locationHash % 900)
-        
+
         return [
             EmergencyShelter(
                 name: schoolName,
@@ -387,13 +364,12 @@ class ShelterService: ObservableObject {
     }
 }
 
-// MARK: - Error Types
 enum ShelterError: Error, LocalizedError {
     case invalidURL
     case noData
     case decodingError
     case locationNotAvailable
-    
+
     var errorDescription: String? {
         switch self {
         case .invalidURL:

@@ -1,10 +1,8 @@
 import SwiftUI
 
-// MARK: - Main Education View
 struct EducationView: View {
     @StateObject private var educationService = EducationService.shared
-    
-    // Navigation states
+
     @State private var selectedModule: LearningModule?
     @State private var selectedLesson: Lesson?
     @State private var showFlashcards = false
@@ -12,22 +10,20 @@ struct EducationView: View {
     @State private var showSearch = false
     @State private var showStats = false
     @State private var showSettings = false
-    
-    // UI states
+
     @State private var searchText = ""
     @State private var animateCards = false
-    
-    // Computed properties
+
     private var filteredModules: [LearningModule] {
         if !searchText.isEmpty {
             return educationService.searchModules(query: searchText)
         }
-        
+
         return educationService.modules
     }
-    
+
     private var todaysLesson: Lesson? {
-        // Find the next incomplete lesson from unlocked modules
+
         for module in educationService.modules where module.isUnlocked {
             for lesson in module.lessons where !lesson.isCompleted {
                 return lesson
@@ -35,7 +31,7 @@ struct EducationView: View {
         }
         return nil
     }
-    
+
     private var flashcardsForReview: [Flashcard] {
         educationService.getFlashcardsForReview()
     }
@@ -44,7 +40,7 @@ struct EducationView: View {
         NavigationStack {
             ZStack {
                 Color.appGradientBackground.ignoresSafeArea()
-                
+
                 if educationService.isLoading {
                     loadingView
                 } else {
@@ -84,38 +80,36 @@ struct EducationView: View {
             Text(educationService.error?.localizedDescription ?? "")
         }
     }
-    
-    // MARK: - Main Content Views
-    
+
     private var loadingView: some View {
         VStack(spacing: 20) {
             ProgressView()
                 .progressViewStyle(CircularProgressViewStyle(tint: .appPrimary))
                 .scaleEffect(1.5)
-            
+
             Text("Loading your learning journey...")
                 .font(.appSubheadline)
                 .foregroundColor(.appTextSecondary)
         }
     }
-    
+
     private var mainContent: some View {
         ScrollView(.vertical, showsIndicators: false) {
             LazyVStack(spacing: 24) {
                 headerSection
-                
+
                 if showSearch {
                     searchSection
                 }
-                
+
                 if let lesson = todaysLesson {
                     todaysLessonCard(lesson: lesson)
                 }
-                
+
                 if !flashcardsForReview.isEmpty {
                     flashcardReviewCard
                 }
-                
+
                 moduleGrid
                 quickActionsSection
             }
@@ -128,40 +122,36 @@ struct EducationView: View {
             }
         }
     }
-    
-    // MARK: - Helper Methods
-    
+
     private func setupEducationView() {
         if educationService.modules.isEmpty {
             educationService.loadInitialData()
         }
     }
-    
+
     private func refreshData() async {
         educationService.loadInitialData()
     }
 }
 
-// MARK: - View Components
 extension EducationView {
-    
+
     var headerSection: some View {
         VStack(spacing: 20) {
-            // Main title and actions row
+
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("WildSafe Academy")
                         .font(.appTitle)
                         .foregroundColor(.appTextPrimary)
-                    
+
                     Text("Learn. Practice. Stay Safe.")
                         .font(.appSubheadline)
                         .foregroundColor(.appTextSecondary)
                 }
-                
+
                 Spacer()
-                
-                // Simplified action buttons
+
                 HStack(spacing: 8) {
                     Button(action: { showSearch.toggle() }) {
                         Image(systemName: "magnifyingglass")
@@ -171,7 +161,7 @@ extension EducationView {
                             .background(Color.appCard.opacity(0.7))
                             .clipShape(Circle())
                     }
-                    
+
                     Button(action: { showStats = true }) {
                         Image(systemName: "chart.bar.fill")
                             .font(.title3)
@@ -182,22 +172,20 @@ extension EducationView {
                     }
                 }
             }
-            
-            // Consolidated progress section
+
             HStack(spacing: 20) {
-                // Level and XP in one compact card
+
                 HStack(spacing: 12) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Level \(educationService.userProgress.currentLevel)")
                             .font(.appSubheadline.bold())
                             .foregroundColor(.appTextPrimary)
-                        
+
                         Text("\(educationService.userProgress.totalXP) XP")
                             .font(.appSmall)
                             .foregroundColor(.appTextSecondary)
                     }
-                    
-                    // Compact progress bar
+
                     ProgressView(value: educationService.userProgress.levelProgress)
                         .progressViewStyle(LinearProgressViewStyle(tint: .appPrimary))
                         .frame(width: 60)
@@ -207,10 +195,9 @@ extension EducationView {
                 .padding(.vertical, 12)
                 .background(Color.appCard.opacity(0.8))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
-                
+
                 Spacer()
-                
-                // Streak and study time combined
+
                 HStack(spacing: 12) {
                     VStack(alignment: .trailing, spacing: 2) {
                         HStack(spacing: 6) {
@@ -221,7 +208,7 @@ extension EducationView {
                                 .font(.appSubheadline.bold())
                                 .foregroundColor(.appTextPrimary)
                         }
-                        
+
                         Text("\(Int(educationService.userProgress.studyTimeToday / 60))min today")
                             .font(.appSmall)
                             .foregroundColor(.appTextSecondary)
@@ -238,49 +225,47 @@ extension EducationView {
         .offset(y: animateCards ? 0 : -20)
         .animation(.easeOut(duration: 0.6), value: animateCards)
     }
-    
 
-    
     func todaysLessonCard(lesson: Lesson) -> some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Text("Continue Learning")
                     .font(.appHeadline)
                     .foregroundColor(.appTextPrimary)
-                
+
                 Spacer()
-                
+
                 Image(systemName: "book.fill")
                     .foregroundColor(.appPrimary)
                     .font(.title3)
             }
-            
+
             VStack(alignment: .leading, spacing: 12) {
                 Text(lesson.title)
                     .font(.appSubheadline.bold())
                     .foregroundColor(.appTextPrimary)
-                
+
                 if let firstSection = lesson.content.sections.first {
                     Text(String(firstSection.content.prefix(120)) + "...")
                         .font(.appBody)
                         .foregroundColor(.appTextSecondary)
                         .lineLimit(3)
                 }
-                
+
                 HStack {
                     Label(lesson.formattedReadingTime, systemImage: "clock")
                         .font(.appSmall)
                         .foregroundColor(.appTextTertiary)
-                    
+
                     Spacer()
-                    
+
                     if lesson.isCompleted {
                         Label("Completed", systemImage: "checkmark.circle.fill")
                             .font(.appSmall)
                             .foregroundColor(.appSuccess)
                     }
                 }
-                
+
                 Button(action: {
                     selectedLesson = lesson
                 }) {
@@ -302,21 +287,21 @@ extension EducationView {
         .offset(y: animateCards ? 0 : 20)
         .animation(.easeOut(duration: 0.6).delay(0.2), value: animateCards)
     }
-    
+
     var moduleGrid: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Text("Learning Modules")
                     .font(.appHeadline)
                     .foregroundColor(.appTextPrimary)
-                
+
                 Spacer()
-                
+
                 Text("\(filteredModules.count) modules")
                     .font(.appCaption)
                     .foregroundColor(.appTextTertiary)
             }
-            
+
             LazyVGrid(columns: [
                 GridItem(.flexible()),
                 GridItem(.flexible())
@@ -328,7 +313,7 @@ extension EducationView {
                         .animation(.easeOut(duration: 0.6).delay(Double(index) * 0.1 + 0.3), value: animateCards)
                 }
             }
-            
+
             if filteredModules.isEmpty {
                 EmptyStateView(
                     icon: "magnifyingglass",
@@ -339,7 +324,7 @@ extension EducationView {
             }
         }
     }
-    
+
     func moduleCard(_ module: LearningModule) -> some View {
         Button(action: {
             if module.isUnlocked {
@@ -348,16 +333,16 @@ extension EducationView {
         }) {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
-                    // Module icon with category color
+
                     Image(systemName: module.iconName)
                         .font(.title2)
                         .foregroundColor(module.colorScheme.colors.primary)
                         .frame(width: 32, height: 32)
                         .background(module.colorScheme.colors.primary.opacity(0.1))
                         .clipShape(Circle())
-                    
+
                     Spacer()
-                    
+
                     VStack(alignment: .trailing, spacing: 2) {
                         if module.isUnlocked {
                             Text(module.formattedDuration)
@@ -368,36 +353,35 @@ extension EducationView {
                                 .font(.caption)
                                 .foregroundColor(.appTextTertiary)
                         }
-                        
+
                         DifficultyBadge(difficulty: module.difficulty)
                     }
                 }
-                
+
                 VStack(alignment: .leading, spacing: 6) {
                     Text(module.title)
                         .font(.appSubheadline.bold())
                         .foregroundColor(module.isUnlocked ? .appTextPrimary : .appTextTertiary)
                         .multilineTextAlignment(.leading)
                         .lineLimit(1)
-                    
+
                     Text(module.description)
                         .font(.appCaption)
                         .foregroundColor(module.isUnlocked ? .appTextSecondary : .appTextTertiary)
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
                 }
-                
+
                 Spacer()
-                
-                // Progress section
+
                 VStack(spacing: 6) {
                     HStack {
                         Text("\(Int(module.progress * 100))% complete")
                             .font(.appSmall)
                             .foregroundColor(.appTextTertiary)
-                        
+
                         Spacer()
-                        
+
                         if module.isCompleted, let badge = module.badge {
                             Text(badge)
                                 .font(.appSmall)
@@ -405,7 +389,7 @@ extension EducationView {
                                 .lineLimit(1)
                         }
                     }
-                    
+
                     ProgressView(value: module.progress)
                         .progressViewStyle(LinearProgressViewStyle(tint: module.colorScheme.colors.primary))
                         .scaleEffect(x: 1, y: 1.5, anchor: .center)
@@ -424,13 +408,13 @@ extension EducationView {
         .buttonStyle(PlainButtonStyle())
         .disabled(!module.isUnlocked)
     }
-    
+
     var quickActionsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Quick Actions")
                 .font(.appHeadline)
                 .foregroundColor(.appTextPrimary)
-            
+
             LazyVGrid(columns: [
                 GridItem(.flexible()),
                 GridItem(.flexible()),
@@ -443,7 +427,7 @@ extension EducationView {
                     color: .appPrimary,
                     action: { showFlashcards = true }
                 )
-                
+
                 quickActionButton(
                     title: "Statistics",
                     subtitle: "View progress",
@@ -451,13 +435,13 @@ extension EducationView {
                     color: .appSecondary,
                     action: { showStats = true }
                 )
-                
+
                 quickActionButton(
                     title: "Achievements",
                     subtitle: "\(educationService.userProgress.achievements.count) earned",
                     icon: "trophy.fill",
                     color: .appWarning,
-                    action: { /* Show achievements */ }
+                    action: {  }
                 )
             }
         }
@@ -465,7 +449,7 @@ extension EducationView {
         .offset(y: animateCards ? 0 : 20)
         .animation(.easeOut(duration: 0.6).delay(0.5), value: animateCards)
     }
-    
+
     func quickActionButton(title: String, subtitle: String, icon: String, color: Color, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             VStack(spacing: 8) {
@@ -473,14 +457,14 @@ extension EducationView {
                     .font(.title2)
                     .foregroundColor(color)
                     .frame(height: 24)
-                
+
                 VStack(spacing: 2) {
                     Text(title)
                         .font(.appCaption.bold())
                         .foregroundColor(.appTextPrimary)
                         .multilineTextAlignment(.center)
                         .lineLimit(1)
-                    
+
                     Text(subtitle)
                         .font(.appSmall)
                         .foregroundColor(.appTextTertiary)
@@ -494,21 +478,19 @@ extension EducationView {
         }
         .buttonStyle(PlainButtonStyle())
     }
-    
-    // MARK: - Additional Views
-    
+
     private var searchSection: some View {
         VStack(spacing: 12) {
             HStack {
                 Image(systemName: "magnifyingglass")
                     .foregroundColor(.appTextTertiary)
                     .font(.title3)
-                
+
                 TextField("Search modules and lessons...", text: $searchText)
                     .font(.appBody)
                     .foregroundColor(.appTextPrimary)
                     .textFieldStyle(PlainTextFieldStyle())
-                
+
                 if !searchText.isEmpty {
                     Button(action: { searchText = "" }) {
                         Image(systemName: "xmark.circle.fill")
@@ -522,28 +504,26 @@ extension EducationView {
         }
         .transition(.opacity.combined(with: .scale))
     }
-    
 
-    
     private var flashcardReviewCard: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Text("Flashcard Review")
                     .font(.appHeadline)
                     .foregroundColor(.appTextPrimary)
-                
+
                 Spacer()
-                
+
                 Image(systemName: "rectangle.stack.fill")
                     .foregroundColor(.appSecondary)
                     .font(.title3)
             }
-            
+
             VStack(alignment: .leading, spacing: 12) {
                 Text("\(flashcardsForReview.count) cards ready for review")
                     .font(.appBody)
                     .foregroundColor(.appTextSecondary)
-                
+
                 Button(action: { showFlashcards = true }) {
                     HStack {
                         Text("Start Review")
@@ -566,18 +546,16 @@ extension EducationView {
     }
 }
 
-// MARK: - Supporting Views
-
 struct StreakIndicator: View {
     let streak: Int
     let longestStreak: Int
-    
+
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: "flame.fill")
                 .foregroundColor(.appPrimary)
                 .font(.title3)
-            
+
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(streak)")
                     .font(.title2.bold())
@@ -586,7 +564,7 @@ struct StreakIndicator: View {
                     .font(.caption2)
                     .foregroundColor(.appTextSecondary)
             }
-            
+
             if longestStreak > streak {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("\(longestStreak)")
@@ -608,18 +586,18 @@ struct LevelIndicator: View {
     let level: Int
     let xp: Int
     let progress: Double
-    
+
     var body: some View {
         VStack(alignment: .trailing, spacing: 4) {
             Text("Level \(level)")
                 .font(.appCaption.bold())
                 .foregroundColor(.appTextPrimary)
-            
+
             ProgressView(value: progress)
                 .progressViewStyle(LinearProgressViewStyle(tint: .appSecondary))
                 .frame(width: 60)
                 .scaleEffect(x: 1, y: 1.5, anchor: .center)
-            
+
             Text("\(xp) XP")
                 .font(.caption2)
                 .foregroundColor(.appTextTertiary)
@@ -627,24 +605,22 @@ struct LevelIndicator: View {
     }
 }
 
-
-
 struct EmptyStateView: View {
     let icon: String
     let title: String
     let message: String
-    
+
     var body: some View {
         VStack(spacing: 16) {
             Image(systemName: icon)
                 .font(.system(size: 48))
                 .foregroundColor(.appTextTertiary)
-            
+
             VStack(spacing: 8) {
                 Text(title)
                     .font(.appHeadline)
                     .foregroundColor(.appTextSecondary)
-                
+
                 Text(message)
                     .font(.appBody)
                     .foregroundColor(.appTextTertiary)
@@ -654,20 +630,18 @@ struct EmptyStateView: View {
     }
 }
 
-// MARK: - Placeholder Views (to be implemented)
-
 struct ModuleDetailView: View {
     let module: LearningModule
     @State private var selectedLesson: Lesson?
     @State private var showQuiz = false
     @State private var showFlashcards = false
     @Environment(\.dismiss) private var dismiss
-    
+
     var body: some View {
         NavigationStack {
             ZStack {
                 Color.appGradientBackground.ignoresSafeArea()
-                
+
                 ScrollView {
                     VStack(spacing: 24) {
                         headerSection
@@ -702,7 +676,7 @@ struct ModuleDetailView: View {
             }
         }
     }
-    
+
     var headerSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
@@ -712,12 +686,12 @@ struct ModuleDetailView: View {
                     .frame(width: 48, height: 48)
                     .background(module.colorScheme.colors.primary.opacity(0.1))
                     .clipShape(Circle())
-                
+
                 VStack(alignment: .leading, spacing: 4) {
                     Text(module.title)
                         .font(.appTitle)
                         .foregroundColor(.appTextPrimary)
-                    
+
                     HStack {
                         DifficultyBadge(difficulty: module.difficulty)
                         Text("•")
@@ -727,10 +701,10 @@ struct ModuleDetailView: View {
                             .foregroundColor(.appTextTertiary)
                     }
                 }
-                
+
                 Spacer()
             }
-            
+
             Text(module.description)
                 .font(.appBody)
                 .foregroundColor(.appTextSecondary)
@@ -739,25 +713,25 @@ struct ModuleDetailView: View {
         .padding(20)
         .appCardStyle()
     }
-    
+
     var progressSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("Progress")
                     .font(.appHeadline)
                     .foregroundColor(.appTextPrimary)
-                
+
                 Spacer()
-                
+
                 Text("\(Int(module.progress * 100))% Complete")
                     .font(.appCaption)
                     .foregroundColor(.appTextTertiary)
             }
-            
+
             ProgressView(value: module.progress)
                 .progressViewStyle(LinearProgressViewStyle(tint: module.colorScheme.colors.primary))
                 .scaleEffect(x: 1, y: 2, anchor: .center)
-            
+
             if module.isCompleted, let badge = module.badge {
                 HStack {
                     Image(systemName: "trophy.fill")
@@ -771,45 +745,45 @@ struct ModuleDetailView: View {
         .padding(20)
         .appCardStyle()
     }
-    
+
     var lessonsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Lessons")
                 .font(.appHeadline)
                 .foregroundColor(.appTextPrimary)
-            
+
             ForEach(Array(module.lessons.enumerated()), id: \.element.id) { index, lesson in
                 lessonCard(lesson, index: index + 1)
             }
         }
     }
-    
+
     func lessonCard(_ lesson: Lesson, index: Int) -> some View {
         Button(action: {
             selectedLesson = lesson
         }) {
             HStack(spacing: 16) {
-                // Lesson number circle
+
                 Text("\(index)")
                     .font(.appCaption.bold())
                     .foregroundColor(.white)
                     .frame(width: 32, height: 32)
                     .background(lesson.isCompleted ? Color.appSuccess : Color.appPrimary)
                     .clipShape(Circle())
-                
+
                 VStack(alignment: .leading, spacing: 4) {
                     Text(lesson.title)
                         .font(.appSubheadline.bold())
                         .foregroundColor(.appTextPrimary)
                         .multilineTextAlignment(.leading)
-                    
+
                     Text(lesson.formattedReadingTime)
                         .font(.appCaption)
                         .foregroundColor(.appTextTertiary)
                 }
-                
+
                 Spacer()
-                
+
                 if lesson.isCompleted {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundColor(.appSuccess)
@@ -825,13 +799,13 @@ struct ModuleDetailView: View {
         }
         .buttonStyle(PlainButtonStyle())
     }
-    
+
     var quizSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Quiz")
                 .font(.appHeadline)
                 .foregroundColor(.appTextPrimary)
-            
+
             Button(action: {
                 showQuiz = true
             }) {
@@ -842,19 +816,19 @@ struct ModuleDetailView: View {
                         .frame(width: 40, height: 40)
                         .background(Color.appPrimary.opacity(0.1))
                         .clipShape(Circle())
-                    
+
                     VStack(alignment: .leading, spacing: 4) {
                         Text(module.quiz?.title ?? "Module Quiz")
                             .font(.appSubheadline.bold())
                             .foregroundColor(.appTextPrimary)
-                        
+
                         Text("\(module.quiz?.questions.count ?? 0) questions")
                             .font(.appCaption)
                             .foregroundColor(.appTextTertiary)
                     }
-                    
+
                     Spacer()
-                    
+
                     Image(systemName: "arrow.right")
                         .foregroundColor(.appPrimary)
                 }
@@ -864,13 +838,13 @@ struct ModuleDetailView: View {
             .buttonStyle(PlainButtonStyle())
         }
     }
-    
+
     var flashcardsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Flashcards")
                 .font(.appHeadline)
                 .foregroundColor(.appTextPrimary)
-            
+
             Button(action: {
                 showFlashcards = true
             }) {
@@ -881,19 +855,19 @@ struct ModuleDetailView: View {
                         .frame(width: 40, height: 40)
                         .background(Color.appAccent.opacity(0.1))
                         .clipShape(Circle())
-                    
+
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Study Flashcards")
                             .font(.appSubheadline.bold())
                             .foregroundColor(.appTextPrimary)
-                        
+
                         Text("\(module.flashcards?.count ?? 0) cards")
                             .font(.appCaption)
                             .foregroundColor(.appTextTertiary)
                     }
-                    
+
                     Spacer()
-                    
+
                     Image(systemName: "arrow.right")
                         .foregroundColor(.appAccent)
                 }
@@ -903,22 +877,22 @@ struct ModuleDetailView: View {
             .buttonStyle(PlainButtonStyle())
         }
     }
-    
+
     var resourcesSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Resources")
                 .font(.appHeadline)
                 .foregroundColor(.appTextPrimary)
-            
+
             ForEach(module.resources, id: \.id) { resource in
                 resourceCard(resource)
             }
         }
     }
-    
+
     func resourceCard(_ resource: Resource) -> some View {
         Button(action: {
-            // Handle resource tap - could open URL or show details
+
             if let urlString = resource.url, let url = URL(string: urlString) {
                 UIApplication.shared.open(url)
             }
@@ -928,21 +902,21 @@ struct ModuleDetailView: View {
                     .font(.title3)
                     .foregroundColor(.appSecondary)
                     .frame(width: 32, height: 32)
-                
+
                 VStack(alignment: .leading, spacing: 4) {
                     Text(resource.title)
                         .font(.appCaption.bold())
                         .foregroundColor(.appTextPrimary)
                         .multilineTextAlignment(.leading)
-                    
+
                     Text(resource.description)
                         .font(.appSmall)
                         .foregroundColor(.appTextSecondary)
                         .multilineTextAlignment(.leading)
                 }
-                
+
                 Spacer()
-                
+
                 Image(systemName: "arrow.up.right")
                     .font(.caption)
                     .foregroundColor(.appTextTertiary)
@@ -989,7 +963,6 @@ struct EducationSettingsView: View {
     }
 }
 
-// MARK: - Preview
 struct EducationView_Previews: PreviewProvider {
     static var previews: some View {
         EducationView()

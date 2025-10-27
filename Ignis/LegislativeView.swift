@@ -1,10 +1,3 @@
-//
-//  LegislativeView.swift
-//  Ignis
-//
-//  Created by Divit Patangia on 8/1/25.
-//
-
 import SwiftUI
 import Charts
 
@@ -13,31 +6,29 @@ struct LegislativeView: View {
     @State private var selectedTab = 0
     @State private var showingContactSheet = false
     @State private var searchText = ""
-    
+
     var body: some View {
         NavigationView {
             ZStack {
-                // Fire-themed background matching landing page
+
                 LinearGradient(
                     colors: [
-                        Color(red: 0.05, green: 0.02, blue: 0.01), // Dark brown
-                        Color(red: 0.1, green: 0.05, blue: 0.02),  // Medium brown
-                        Color(red: 0.15, green: 0.08, blue: 0.03), // Light brown
+                        Color(red: 0.05, green: 0.02, blue: 0.01),
+                        Color(red: 0.1, green: 0.05, blue: 0.02),
+                        Color(red: 0.15, green: 0.08, blue: 0.03),
                         Color.black
                     ],
                     startPoint: .top,
                     endPoint: .bottom
                 )
                 .ignoresSafeArea()
-                
+
                 VStack(spacing: 0) {
-                    // Header
+
                     headerSection
-                    
-                    // Tab Bar
+
                     customTabBar
-                    
-                    // Content
+
                     if dataService.isLoading {
                         VStack(spacing: 16) {
                             ProgressView()
@@ -68,7 +59,7 @@ struct LegislativeView: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .padding()
                     } else {
-                        // Custom content switching without TabView
+
                         Group {
                             switch selectedTab {
                             case 0:
@@ -84,7 +75,7 @@ struct LegislativeView: View {
                             }
                         }
                         .animation(.easeInOut(duration: 0.2), value: selectedTab)
-                        .padding(.bottom, 100) // Add bottom padding for navigation bar
+                        .padding(.bottom, 100)
                     }
                 }
             }
@@ -98,7 +89,7 @@ struct LegislativeView: View {
             }
         }
     }
-    
+
     private var headerSection: some View {
         VStack(spacing: 16) {
             HStack {
@@ -113,14 +104,14 @@ struct LegislativeView: View {
                                 endPoint: .bottomTrailing
                             )
                         )
-                    
+
                     Text("Track wildfire policies and funding")
                         .font(.subheadline)
                         .foregroundColor(.white.opacity(0.8))
                 }
-                
+
                 Spacer()
-                
+
                 Button(action: { showingContactSheet = true }) {
                     Image(systemName: "envelope.fill")
                         .font(.title2)
@@ -137,8 +128,7 @@ struct LegislativeView: View {
                         .shadow(color: .orange.opacity(0.6), radius: 8, x: 0, y: 4)
                 }
             }
-            
-            // Key Metrics
+
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 12) {
                 MetricCard(title: "Prevention", value: "$\(Int(dataService.spendingData.first?.prevention ?? 0))M", subtitle: "2024 Budget", color: .green)
                 MetricCard(title: "Recovery", value: "$\(Int(dataService.spendingData.first?.recovery ?? 0))M", subtitle: "2024 Cost", color: .red)
@@ -148,7 +138,7 @@ struct LegislativeView: View {
         .padding()
         .background(Color.black.opacity(0.3))
     }
-    
+
     private var customTabBar: some View {
         HStack(spacing: 0) {
             ForEach(0..<4) { index in
@@ -156,7 +146,7 @@ struct LegislativeView: View {
                     VStack(spacing: 4) {
                         Image(systemName: tabIcons[index])
                             .font(.system(size: 20))
-                        
+
                         Text(tabTitles[index])
                             .font(.caption)
                             .fontWeight(.medium)
@@ -173,25 +163,22 @@ struct LegislativeView: View {
         .cornerRadius(12)
         .padding(.horizontal)
     }
-    
+
     private let tabIcons = ["chart.bar.fill", "doc.text.fill", "dollarsign.circle.fill", "megaphone.fill"]
     private let tabTitles = ["Overview", "Policies", "Funding", "Action"]
 }
 
-// MARK: - Overview Tab
 struct OverviewTab: View {
     @ObservedObject var dataService: LegislativeDataService
-    
+
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-                // Spending Chart
+
                 SpendingChart(dataService: dataService)
-                
-                // Recent Activity
+
                 RecentActivitySection()
-                
-                // Quick Actions
+
                 QuickActionsSection()
             }
             .padding()
@@ -201,18 +188,18 @@ struct OverviewTab: View {
 
 struct SpendingChart: View {
     @ObservedObject var dataService: LegislativeDataService
-    
+
     var data: [SpendingData] {
         dataService.spendingData.isEmpty ? sampleSpendingData : dataService.spendingData
     }
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Wildfire Spending Trends")
                 .font(.headline)
                 .fontWeight(.semibold)
                 .foregroundColor(.white)
-            
+
             Chart(data) { item in
                 BarMark(
                     x: .value("Year", item.year),
@@ -225,7 +212,7 @@ struct SpendingChart: View {
                         endPoint: .bottom
                     )
                 )
-                
+
                 BarMark(
                     x: .value("Year", item.year),
                     y: .value("Recovery", item.recovery)
@@ -268,7 +255,7 @@ struct RecentActivitySection: View {
                 .font(.headline)
                 .fontWeight(.semibold)
                 .foregroundColor(.white)
-            
+
             VStack(spacing: 12) {
                 ActivityRow(
                     title: "SB 436 Passed",
@@ -276,14 +263,14 @@ struct RecentActivitySection: View {
                     date: "2 days ago",
                     type: .policy
                 )
-                
+
                 ActivityRow(
                     title: "New Grant Program",
                     subtitle: "$50M allocated for community prevention",
                     date: "1 week ago",
                     type: .funding
                 )
-                
+
                 ActivityRow(
                     title: "Public Hearing",
                     subtitle: "Wildfire prevention budget discussion",
@@ -305,26 +292,26 @@ struct QuickActionsSection: View {
                 .font(.headline)
                 .fontWeight(.semibold)
                 .foregroundColor(.white)
-            
+
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 12) {
                 QuickActionCard(
                     title: "Find Your Rep",
                     icon: "person.fill",
                     color: .blue
                 )
-                
+
                 QuickActionCard(
                     title: "Submit Comment",
                     icon: "pencil",
                     color: .green
                 )
-                
+
                 QuickActionCard(
                     title: "Track Bills",
                     icon: "doc.text",
                     color: .orange
                 )
-                
+
                 QuickActionCard(
                     title: "Join Meeting",
                     icon: "video.fill",
@@ -335,29 +322,28 @@ struct QuickActionsSection: View {
     }
 }
 
-// MARK: - Policies Tab
 struct PoliciesTab: View {
     @ObservedObject var dataService: LegislativeDataService
     @State private var searchText = ""
     @State private var selectedFilter = "All"
-    
+
     let filters = ["All", "Active", "Proposed", "Passed"]
-    
+
     var body: some View {
         VStack(spacing: 0) {
-            // Search and Filter
+
             VStack(spacing: 12) {
                 HStack {
                     Image(systemName: "magnifyingglass")
                         .foregroundColor(.white.opacity(0.7))
-                    
+
                     TextField("Search policies...", text: $searchText)
                         .foregroundColor(.white)
                 }
                 .padding()
                 .background(Color.black.opacity(0.4))
                 .cornerRadius(10)
-                
+
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         ForEach(filters, id: \.self) { filter in
@@ -373,8 +359,7 @@ struct PoliciesTab: View {
                 }
             }
             .padding()
-            
-            // Policies List
+
             ScrollView {
                 LazyVStack(spacing: 16) {
                     ForEach(dataService.policies.isEmpty ? samplePolicies : dataService.policies) { policy in
@@ -387,28 +372,26 @@ struct PoliciesTab: View {
     }
 }
 
-// MARK: - Funding Tab
 struct FundingTab: View {
     @ObservedObject var dataService: LegislativeDataService
-    
+
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-                // Available Funding
+
                 VStack(alignment: .leading, spacing: 16) {
                     Text("Available Funding")
                         .font(.headline)
                         .fontWeight(.semibold)
                         .foregroundColor(.white)
-                    
+
                     VStack(spacing: 12) {
                         ForEach(dataService.funding.isEmpty ? sampleFunding : dataService.funding) { fund in
                             FundingCard(funding: fund)
                         }
                     }
                 }
-                
-                // Application Tips
+
                 TipsSection()
             }
             .padding()
@@ -416,20 +399,17 @@ struct FundingTab: View {
     }
 }
 
-// MARK: - Action Tab
 struct ActionTab: View {
     @ObservedObject var dataService: LegislativeDataService
-    
+
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-                // Contact Representatives
+
                 ContactSection(dataService: dataService)
-                
-                // Upcoming Events
+
                 EventsSection(dataService: dataService)
-                
-                // Advocacy Resources
+
                 ResourcesSection()
             }
             .padding()
@@ -437,24 +417,23 @@ struct ActionTab: View {
     }
 }
 
-// MARK: - Supporting Views
 struct MetricCard: View {
     let title: String
     let value: String
     let subtitle: String
     let color: Color
-    
+
     var body: some View {
         VStack(spacing: 4) {
             Text(value)
                 .font(.title2)
                 .fontWeight(.bold)
                 .foregroundColor(color)
-            
+
             Text(title)
                 .font(.caption)
                 .foregroundColor(.white.opacity(0.8))
-            
+
             Text(subtitle)
                 .font(.caption2)
                 .foregroundColor(.white.opacity(0.6))
@@ -471,26 +450,26 @@ struct ActivityRow: View {
     let subtitle: String
     let date: String
     let type: ActivityType
-    
+
     var body: some View {
         HStack(spacing: 12) {
             Circle()
                 .fill(type.color)
                 .frame(width: 8, height: 8)
-            
+
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(.subheadline)
                     .fontWeight(.medium)
                     .foregroundColor(.white)
-                
+
                 Text(subtitle)
                     .font(.caption)
                     .foregroundColor(.white.opacity(0.8))
             }
-            
+
             Spacer()
-            
+
             Text(date)
                 .font(.caption2)
                 .foregroundColor(.white.opacity(0.6))
@@ -505,13 +484,13 @@ struct QuickActionCard: View {
     let title: String
     let icon: String
     let color: Color
-    
+
     var body: some View {
         VStack(spacing: 8) {
             Image(systemName: icon)
                 .font(.title2)
                 .foregroundColor(color)
-            
+
             Text(title)
                 .font(.caption)
                 .fontWeight(.medium)
@@ -528,7 +507,7 @@ struct QuickActionCard: View {
 struct PolicyCard: View {
     let policy: Policy
     @State private var isExpanded = false
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -537,22 +516,22 @@ struct PolicyCard: View {
                         .font(.headline)
                         .fontWeight(.semibold)
                         .foregroundColor(.white)
-                    
+
                     Text(policy.billNumber)
                         .font(.caption)
                         .foregroundColor(.white.opacity(0.7))
                 }
-                
+
                 Spacer()
-                
+
                 StatusBadge(status: policy.status)
             }
-            
+
             if isExpanded {
                 Text(policy.description)
                     .font(.body)
                     .foregroundColor(.white.opacity(0.8))
-                
+
                 HStack {
                     Label("Sponsor: \(policy.sponsor)", systemImage: "person.fill")
                     Spacer()
@@ -561,7 +540,7 @@ struct PolicyCard: View {
                 .font(.caption)
                 .foregroundColor(.white.opacity(0.6))
             }
-            
+
             Button(action: { withAnimation { isExpanded.toggle() } }) {
                 HStack {
                     Text(isExpanded ? "Show Less" : "Show More")
@@ -579,7 +558,7 @@ struct PolicyCard: View {
 
 struct FundingCard: View {
     let funding: Funding
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -588,21 +567,21 @@ struct FundingCard: View {
                         .font(.headline)
                         .fontWeight(.semibold)
                         .foregroundColor(.white)
-                    
+
                     Text(funding.amount)
                         .font(.subheadline)
                         .foregroundColor(.green)
                         .fontWeight(.medium)
                 }
-                
+
                 Spacer()
-                
+
                 if let deadline = funding.deadline {
                     VStack(alignment: .trailing, spacing: 2) {
                         Text("Deadline")
                             .font(.caption2)
                             .foregroundColor(.white.opacity(0.6))
-                        
+
                         Text(deadline)
                             .font(.caption)
                             .fontWeight(.medium)
@@ -610,17 +589,17 @@ struct FundingCard: View {
                     }
                 }
             }
-            
+
             Text(funding.description)
                 .font(.body)
                 .foregroundColor(.white.opacity(0.8))
-            
+
             HStack {
                 Label(funding.eligibility, systemImage: "person.2.fill")
                     .foregroundColor(.white.opacity(0.7))
                 Spacer()
                 Button("Apply") {
-                    // Handle application
+
                 }
                 .font(.caption)
                 .fontWeight(.medium)
@@ -647,7 +626,7 @@ struct PolicyFilterChip: View {
     let title: String
     let isSelected: Bool
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             Text(title)
@@ -664,7 +643,7 @@ struct PolicyFilterChip: View {
 
 struct StatusBadge: View {
     let status: PolicyStatus
-    
+
     var body: some View {
         Text(status.rawValue)
             .font(.caption)
@@ -679,14 +658,14 @@ struct StatusBadge: View {
 
 struct ContactSection: View {
     @ObservedObject var dataService: LegislativeDataService
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Contact Your Representatives")
                 .font(.headline)
                 .fontWeight(.semibold)
                 .foregroundColor(.white)
-            
+
             VStack(spacing: 12) {
                 ForEach(dataService.representatives.isEmpty ? sampleRepresentatives : dataService.representatives) { rep in
                     RepresentativeCard(representative: rep)
@@ -701,7 +680,7 @@ struct ContactSection: View {
 
 struct RepresentativeCard: View {
     let representative: Representative
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -710,11 +689,11 @@ struct RepresentativeCard: View {
                         .font(.headline)
                         .fontWeight(.semibold)
                         .foregroundColor(.white)
-                    
+
                     Text(representative.title)
                         .font(.subheadline)
                         .foregroundColor(.white.opacity(0.8))
-                    
+
                     Text(representative.party)
                         .font(.caption)
                         .foregroundColor(.orange)
@@ -723,9 +702,9 @@ struct RepresentativeCard: View {
                         .background(Color.orange.opacity(0.2))
                         .cornerRadius(4)
                 }
-                
+
                 Spacer()
-                
+
                 VStack(spacing: 8) {
                     Button("Email") {
                         if let url = URL(string: "mailto:\(representative.email)") {
@@ -745,7 +724,7 @@ struct RepresentativeCard: View {
                         )
                     )
                     .cornerRadius(8)
-                    
+
                     Button("Call") {
                         if let url = URL(string: "tel:\(representative.phone.replacingOccurrences(of: " ", with: ""))") {
                             UIApplication.shared.open(url)
@@ -766,7 +745,7 @@ struct RepresentativeCard: View {
                     .cornerRadius(8)
                 }
             }
-            
+
             Text(representative.office)
                 .font(.caption)
                 .foregroundColor(.white.opacity(0.7))
@@ -779,14 +758,14 @@ struct RepresentativeCard: View {
 
 struct EventsSection: View {
     @ObservedObject var dataService: LegislativeDataService
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Upcoming Events")
                 .font(.headline)
                 .fontWeight(.semibold)
                 .foregroundColor(.white)
-            
+
             VStack(spacing: 12) {
                 ForEach(dataService.events.isEmpty ? sampleEvents : dataService.events) { event in
                     EventCard(event: event)
@@ -801,7 +780,7 @@ struct EventsSection: View {
 
 struct EventCard: View {
     let event: Event
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
@@ -809,9 +788,9 @@ struct EventCard: View {
                     .font(.subheadline)
                     .fontWeight(.medium)
                     .foregroundColor(.white)
-                
+
                 Spacer()
-                
+
                 Text(event.type.rawValue)
                     .font(.caption2)
                     .foregroundColor(.white)
@@ -826,7 +805,7 @@ struct EventCard: View {
                     )
                     .cornerRadius(4)
             }
-            
+
             HStack {
                 Label(event.date, systemImage: "calendar")
                 Spacer()
@@ -834,11 +813,11 @@ struct EventCard: View {
             }
             .font(.caption)
             .foregroundColor(.white.opacity(0.7))
-            
+
             Label(event.location, systemImage: "location")
                 .font(.caption)
                 .foregroundColor(.white.opacity(0.7))
-            
+
             Text(event.description)
                 .font(.caption)
                 .foregroundColor(.white.opacity(0.8))
@@ -857,18 +836,18 @@ struct ResourcesSection: View {
                 .font(.headline)
                 .fontWeight(.semibold)
                 .foregroundColor(.white)
-            
+
             VStack(spacing: 12) {
                 ResourceCard(
                     title: "How to Write Effective Letters",
                     description: "Tips for contacting your representatives"
                 )
-                
+
                 ResourceCard(
                     title: "Understanding the Legislative Process",
                     description: "How bills become laws"
                 )
-                
+
                 ResourceCard(
                     title: "Finding Your Representatives",
                     description: "Locate your elected officials"
@@ -884,14 +863,14 @@ struct ResourcesSection: View {
 struct ResourceCard: View {
     let title: String
     let description: String
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
                 .font(.subheadline)
                 .fontWeight(.medium)
                 .foregroundColor(.white)
-            
+
             Text(description)
                 .font(.caption)
                 .foregroundColor(.white.opacity(0.8))
@@ -910,7 +889,7 @@ struct TipsSection: View {
                 .font(.headline)
                 .fontWeight(.semibold)
                 .foregroundColor(.white)
-            
+
             VStack(alignment: .leading, spacing: 8) {
                 TipRow(text: "Start early - applications take time")
                 TipRow(text: "Gather required documents")
@@ -926,13 +905,13 @@ struct TipsSection: View {
 
 struct TipRow: View {
     let text: String
-    
+
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: "checkmark.circle.fill")
                 .foregroundColor(.green)
                 .font(.caption)
-            
+
             Text(text)
                 .font(.caption)
                 .foregroundColor(.white.opacity(0.8))
@@ -945,7 +924,7 @@ struct ContactSheet: View {
     @State private var name = ""
     @State private var email = ""
     @State private var message = ""
-    
+
     var body: some View {
         NavigationView {
             Form {
@@ -954,15 +933,15 @@ struct ContactSheet: View {
                     TextField("Email", text: $email)
                         .keyboardType(.emailAddress)
                 }
-                
+
                 Section("Message") {
                     TextEditor(text: $message)
                         .frame(minHeight: 100)
                 }
-                
+
                 Section {
                     Button("Send Message") {
-                        // Handle sending
+
                         dismiss()
                     }
                     .disabled(name.isEmpty || email.isEmpty || message.isEmpty)
@@ -981,7 +960,6 @@ struct ContactSheet: View {
     }
 }
 
-// MARK: - Data Models
 struct SpendingData: Identifiable {
     let id = UUID()
     let year: Int
@@ -1013,7 +991,7 @@ enum PolicyStatus: String, CaseIterable {
     case proposed = "Proposed"
     case passed = "Passed"
     case failed = "Failed"
-    
+
     var color: Color {
         switch self {
         case .active: return .green
@@ -1026,7 +1004,7 @@ enum PolicyStatus: String, CaseIterable {
 
 enum ActivityType {
     case policy, funding, meeting
-    
+
     var color: Color {
         switch self {
         case .policy: return .blue
@@ -1036,7 +1014,6 @@ enum ActivityType {
     }
 }
 
-// MARK: - Sample Data
 let samplePolicies = [
     Policy(
         title: "SB 436 - Wildfire Prevention Act",
@@ -1105,4 +1082,4 @@ let sampleFunding = [
 
 #Preview {
     LegislativeView()
-} 
+}

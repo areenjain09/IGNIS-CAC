@@ -1,15 +1,6 @@
-//
-//  CALFireIncident.swift
-//  Ignis
-//
-//  Created by Areen Jain on 8/4/25.
-//
-
-
 import SwiftUI
 import CoreLocation
-// import MapKit // temporarily disabled
-// Real-Time CAL FIRE Incidents Data - Optimized
+
 struct CALFireIncident: Identifiable, Codable, Hashable {
     var id = UUID()
     let name: String
@@ -22,18 +13,18 @@ struct CALFireIncident: Identifiable, Codable, Hashable {
     let latitude: Double
     let longitude: Double
     let url: String
-    
+
     var coordinate: CLLocationCoordinate2D {
         return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
     }
-    
+
     var intensityLevel: Int {
         if acresBurned > 10000 { return 3 }
         else if acresBurned > 1000 { return 2 }
         else if acresBurned > 100 { return 1 }
         else { return 0 }
     }
-    
+
     var statusColor: String {
         if isActive {
             return "wsRed"
@@ -41,7 +32,7 @@ struct CALFireIncident: Identifiable, Codable, Hashable {
             return "wsOrange"
         }
     }
-    
+
     var statusText: String {
         if isActive {
             return "ACTIVE"
@@ -49,18 +40,16 @@ struct CALFireIncident: Identifiable, Codable, Hashable {
             return "CONTAINED"
         }
     }
-    
-    // Hashable conformance for better performance
+
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }
-    
+
     static func == (lhs: CALFireIncident, rhs: CALFireIncident) -> Bool {
         return lhs.id == rhs.id
     }
 }
-// Real-Time CAL FIRE Data - Generated on 2025-08-02 18:56:49
-// Active Fires: 13, Recent Contained: 28
+
 let calFireIncidents: [CALFireIncident] = [
     CALFireIncident(
         name: "Green Fire",
@@ -543,14 +532,14 @@ let calFireIncidents: [CALFireIncident] = [
         url: "https://www.fire.ca.gov/incidents/2025/8/1/bernardo-fire/"
     ),
 ]
-// Fire Statistics
+
 let fireStats = FireStatistics(
     totalActiveFires: 13,
     totalAcresBurning: 72592.8,
     largestActiveFire: "Gifford Fire ",
     lastUpdated: "2025-08-02 18:56:49"
 )
-// MARK: - Watch Duty Style Map Interface
+
 struct FireStatistics {
     let totalActiveFires: Int
     let totalAcresBurning: Double
@@ -560,19 +549,18 @@ struct FireStatistics {
 struct DynamicFireMarker: View {
     let fire: CALFireIncident
     let onTap: () -> Void
-    
+
     var body: some View {
         Button(action: onTap) {
             ZStack {
-                // Dynamic glow based on fire size
+
                 if fire.acresBurned > 10000 {
                     Circle()
                         .fill(getFireColor().opacity(0.4))
                         .frame(width: getMarkerSize() + 20, height: getMarkerSize() + 20)
                         .blur(radius: 8)
                 }
-                
-                // Main marker
+
                 Circle()
                     .fill(
                         LinearGradient(
@@ -588,8 +576,7 @@ struct DynamicFireMarker: View {
                             .shadow(color: .black.opacity(0.3), radius: 1)
                     )
                     .shadow(color: getFireColor().opacity(0.6), radius: 6, x: 0, y: 3)
-                
-                // Fire icon
+
                 Image(systemName: "flame.fill")
                     .font(.system(size: getIconSize(), weight: .bold))
                     .foregroundColor(.white)
@@ -598,21 +585,21 @@ struct DynamicFireMarker: View {
         }
         .buttonStyle(PlainButtonStyle())
     }
-    
+
     private func getMarkerSize() -> CGFloat {
         if fire.acresBurned > 10000 { return 36 }
         else if fire.acresBurned > 1000 { return 30 }
         else if fire.acresBurned > 100 { return 26 }
         else { return 22 }
     }
-    
+
     private func getIconSize() -> CGFloat {
         if fire.acresBurned > 10000 { return 16 }
         else if fire.acresBurned > 1000 { return 14 }
         else if fire.acresBurned > 100 { return 12 }
         else { return 10 }
     }
-    
+
     private func getFireColor() -> Color {
         if !fire.isActive { return .gray }
         if fire.percentContained < 30 { return .red }
@@ -623,10 +610,10 @@ struct DynamicFireMarker: View {
 struct FireDetailCard: View {
     let fire: CALFireIncident
     @Environment(\.dismiss) private var dismiss
-    
+
     var body: some View {
         VStack(spacing: 0) {
-            // Header with fire name and size
+
             VStack(spacing: 8) {
                 HStack {
                     Text(fire.name)
@@ -636,18 +623,17 @@ struct FireDetailCard: View {
                     Button("Done") { dismiss() }
                         .foregroundColor(.wsOrange)
                 }
-                
+
                 Text("\(Int(fire.acresBurned)) acres")
                     .font(.headline)
                     .foregroundColor(.wsYellow)
             }
             .padding()
             .background(Color.wsDark.opacity(0.8))
-            
-            // Fire details
+
             ScrollView {
                 VStack(spacing: 16) {
-                    // Status indicator
+
                     HStack {
                         Circle()
                             .fill(fire.isActive ? Color.wsRed : Color.wsOrange)
@@ -658,8 +644,7 @@ struct FireDetailCard: View {
                         Spacer()
                     }
                     .padding(.horizontal)
-                    
-                    // Details grid
+
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 12) {
                         DetailItem(title: "Containment", value: "\(Int(fire.percentContained))%", icon: "percent")
                         DetailItem(title: "Started", value: fire.startedDate, icon: "calendar")
@@ -667,8 +652,7 @@ struct FireDetailCard: View {
                         DetailItem(title: "Location", value: fire.location, icon: "location.fill")
                     }
                     .padding(.horizontal)
-                    
-                    // CAL FIRE link
+
                     if !fire.url.isEmpty {
                         Button("View on CAL FIRE Website") {
                             if let url = URL(string: fire.url) {
@@ -694,7 +678,7 @@ struct DetailItem: View {
     let title: String
     let value: String
     let icon: String
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
@@ -714,768 +698,3 @@ struct DetailItem: View {
         .cornerRadius(8)
     }
 }
-/* struct WildfireMap: View {
-    @StateObject private var locationManager = LocationManager()
-    @StateObject private var fireDataService = FireDataService()
-    @State private var cameraPosition: MapCameraPosition = .automatic
-    @State private var region: MKCoordinateRegion? = nil
-    @State private var showLocationError = false
-    @State private var selectedCALFire: CALFireIncident? = nil
-    @State private var selectedFilter: FireFilter = .all
-    @State private var showFilters = false
-    @State private var isLoading = false
-    @State private var lastUpdateTime = Date()
-    
-    
-    // Performance optimization: Cache filtered fires
-    @State private var filteredFires: [CALFireIncident] = []
-    var body: some View {
-        ZStack {
-            backgroundView
-            mapView
-            controlsView
-        }
-        .background(backgroundView)
-        .navigationBarHidden(true)
-        .navigationBarBackButtonHidden(true)
-        .toolbar(.hidden, for: .navigationBar)
-        .sheet(item: $selectedCALFire) { fire in
-            FireDetailCard(fire: fire)
-        }
-        .alert("Location Access Required", isPresented: $showLocationError) {
-            Button("Open Settings", action: openSettings)
-            Button("Cancel", role: .cancel) { }
-        } message: {
-            Text("Please enable location access in Settings to see nearby fires.")
-        }
-        .onAppear {
-            setupInitialMapPosition()
-            updateFilteredFires()
-        }
-        .onChange(of: selectedFilter) { _, _ in
-            updateFilteredFires()
-        }
-        .onChange(of: fireDataService.calFireIncidents) { _, _ in
-            updateFilteredFires()
-        }
-    }
-    
-    private var backgroundView: some View {
-        LinearGradient(gradient: Gradient(colors: [.wsDark, .wsOrange.opacity(0.15)]), startPoint: .top, endPoint: .bottom)
-            .ignoresSafeArea(.all, edges: .all)
-    }
-    
-    private var mapView: some View {
-        Map(position: $cameraPosition) {
-            // Show user location with simplified marker
-            if let location = locationManager.location {
-                UserAnnotation()
-                Annotation("Your Location", coordinate: location.coordinate) {
-                    simplifiedUserMarker
-                }
-            }
-            
-            // Show filtered CAL FIRE incidents with Watch Duty-style markers
-            ForEach(filteredFires, id: \.id) { fire in
-                Annotation(fire.name, coordinate: fire.coordinate) {
-                    DynamicFireMarker(fire: fire) {
-                        handleCALFireTap(fire)
-                    }
-                }
-            }
-        }
-        .edgesIgnoringSafeArea(.all)
-        .accessibilityLabel("Wildfire Map")
-        .onAppear {
-            setupInitialMapPosition()
-        }
-        .onChange(of: locationManager.location) { _, newLocation in
-            if let location = newLocation, cameraPosition == .automatic {
-                let region = MKCoordinateRegion(
-                    center: location.coordinate,
-                    span: MKCoordinateSpan(latitudeDelta: 1.0, longitudeDelta: 1.0)
-                )
-                cameraPosition = .region(region)
-            }
-        }
-        .onMapCameraChange { context in
-            region = context.region
-        }
-    }
-    
-    // Simplified user marker for better performance
-    private var simplifiedUserMarker: some View {
-        ZStack {
-            Circle()
-                .fill(Color.wsOrange)
-                .frame(width: 20, height: 20)
-                .overlay(Circle().stroke(.white, lineWidth: 2))
-            
-            Image(systemName: "location.fill")
-                .foregroundColor(.white)
-                .font(.caption2.bold())
-        }
-    }
-    
-    private var controlsView: some View {
-        VStack {
-            topControls
-            Spacer()
-            bottomControls
-        }
-    }
-    
-    // MARK: - UI Components
-    
-    private var topControls: some View {
-        VStack(spacing: 12) {
-            // Fire Statistics Bar
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Active Fires: \(fireStats.totalActiveFires)")
-                        .font(.caption.bold())
-                        .foregroundColor(.wsRed)
-                    Text("\(Int(fireStats.totalAcresBurning)) acres burning")
-                        .font(.caption2)
-                        .foregroundColor(.white.opacity(0.8))
-                }
-                
-                Spacer()
-                
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text("Largest: \(fireStats.largestActiveFire)")
-                        .font(.caption.bold())
-                        .foregroundColor(.wsOrange)
-                    Text("Updated: \(timeAgoString(from: lastUpdateTime))")
-                        .font(.caption2)
-                        .foregroundColor(.white.opacity(0.8))
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.wsDark.opacity(0.9))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Color.wsOrange.opacity(0.3), lineWidth: 1)
-                    )
-            )
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
-            
-            // Status bar
-            HStack {
-                // Update status
-                HStack(spacing: 8) {
-                    Circle()
-                        .fill(isLoading ? Color.wsOrange : Color.wsYellow)
-                        .frame(width: 8, height: 8)
-                    
-                    Text(isLoading ? "Updating..." : "Last updated \(timeAgoString(from: lastUpdateTime))")
-                        .font(.caption)
-                        .foregroundColor(.white.opacity(0.8))
-                }
-                
-                Spacer()
-                
-                // Filter button
-                Button(action: { showFilters.toggle() }) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "line.3.horizontal.decrease.circle.fill")
-                            .font(.title3)
-                        Text(selectedFilter.displayName)
-                            .font(.caption.bold())
-                    }
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(
-                        RoundedRectangle(cornerRadius: 20)
-                            .fill(Color.wsDark.opacity(0.8))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 20)
-                                    .stroke(Color.wsOrange.opacity(0.5), lineWidth: 1)
-                            )
-                    )
-                }
-            }
-            .padding(.horizontal, 16)
-            
-            // Filter panel
-            if showFilters {
-                filterPanel
-                    .transition(.move(edge: .top).combined(with: .opacity))
-            }
-        }
-    }
-    
-    private var filterPanel: some View {
-        VStack(spacing: 8) {
-            HStack(spacing: 12) {
-                ForEach(FireFilter.allCases, id: \.self) { filter in
-                    Button(action: {
-                        selectedFilter = filter
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            showFilters = false
-                        }
-                    }) {
-                        Text(filter.displayName)
-                            .font(.caption.bold())
-                            .foregroundColor(selectedFilter == filter ? .wsDark : .white)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                            .background(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .fill(selectedFilter == filter ? Color.wsOrange : Color.wsDark.opacity(0.6))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 16)
-                                            .stroke(Color.wsOrange.opacity(0.3), lineWidth: 1)
-                                    )
-                            )
-                    }
-                }
-            }
-            .padding(.horizontal, 16)
-        }
-        .padding(.vertical, 12)
-        .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color.wsDark.opacity(0.9))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(Color.wsOrange.opacity(0.3), lineWidth: 1)
-                )
-        )
-        .padding(.horizontal, 16)
-    }
-    
-    private var bottomControls: some View {
-        VStack {
-            Spacer()
-            
-            HStack {
-                Spacer()
-                
-                // Zoom controls on the right
-                VStack(spacing: 12) {
-                    Button(action: {
-                        zoomMap(by: 0.5)
-                    }) {
-                        Image(systemName: "plus.magnifyingglass")
-                            .font(.title2)
-                            .padding()
-                            .background(
-                                Circle()
-                                    .fill(Color.wsDark.opacity(0.8))
-                                    .overlay(
-                                        Circle()
-                                            .stroke(Color.wsOrange.opacity(0.5), lineWidth: 1)
-                                    )
-                            )
-                            .foregroundColor(.white)
-                    }
-                    
-                    Button(action: {
-                        zoomMap(by: 2.0)
-                    }) {
-                        Image(systemName: "minus.magnifyingglass")
-                            .font(.title2)
-                            .padding()
-                            .background(
-                                Circle()
-                                    .fill(Color.wsDark.opacity(0.8))
-                                    .overlay(
-                                        Circle()
-                                            .stroke(Color.wsOrange.opacity(0.5), lineWidth: 1)
-                                    )
-                            )
-                            .foregroundColor(.white)
-                    }
-                }
-                .padding(.trailing, 16)
-                .padding(.bottom, 100) // Account for navigation bar
-            }
-        }
-    }
-    // MARK: - Helper Methods
-    
-    private func updateFilteredFires() {
-        switch selectedFilter {
-        case .all:
-            filteredFires = fireDataService.calFireIncidents
-        case .active:
-            filteredFires = fireDataService.calFireIncidents.filter { $0.isActive }
-        case .highThreat:
-            filteredFires = fireDataService.calFireIncidents.filter { $0.isActive && $0.percentContained < 30 }
-        case .contained:
-            filteredFires = fireDataService.calFireIncidents.filter { !$0.isActive }
-        }
-    }
-    
-    private func handleCALFireTap(_ fire: CALFireIncident) {
-        selectedCALFire = fire
-    }
-    
-    private func timeAgoString(from date: Date) -> String {
-        let interval = Date().timeIntervalSince(date)
-        if interval < 60 {
-            return "just now"
-        } else if interval < 3600 {
-            let minutes = Int(interval / 60)
-            return "\(minutes)m ago"
-        } else if interval < 86400 {
-            let hours = Int(interval / 3600)
-            return "\(hours)h ago"
-        } else {
-            let days = Int(interval / 86400)
-            return "\(days)d ago"
-        }
-    }
-    
-    private func setupInitialMapPosition() {
-        // Request location permission immediately
-        if locationManager.authorizationStatus == .notDetermined {
-            locationManager.requestLocationPermission()
-        }
-        
-        // Set initial map position based on current authorization status
-        switch locationManager.authorizationStatus {
-        case .authorizedWhenInUse, .authorizedAlways:
-            if let location = locationManager.location {
-                let region = MKCoordinateRegion(
-                    center: location.coordinate,
-                    span: MKCoordinateSpan(latitudeDelta: 1.0, longitudeDelta: 1.0)
-                )
-                cameraPosition = .region(region)
-            } else {
-                // If we have permission but no location yet, start with automatic
-                cameraPosition = .automatic
-            }
-        case .denied, .restricted:
-            showLocationError = true
-            fallbackToDefaultRegion()
-        case .notDetermined:
-            // Start with automatic while waiting for permission response
-            cameraPosition = .automatic
-        @unknown default:
-            fallbackToDefaultRegion()
-        }
-    }
-    private func fallbackToDefaultRegion() {
-        // Default to western US view
-        let defaultRegion = MKCoordinateRegion(
-            center: CLLocationCoordinate2D(latitude: 39.8283, longitude: -118.5795),
-            span: MKCoordinateSpan(latitudeDelta: 10, longitudeDelta: 10)
-        )
-        cameraPosition = .region(defaultRegion)
-    }
-    private func recenterToUserLocation() {
-        if let location = locationManager.location {
-            let region = MKCoordinateRegion(
-                center: location.coordinate,
-                span: MKCoordinateSpan(latitudeDelta: 1.0, longitudeDelta: 1.0)
-            )
-            withAnimation {
-                cameraPosition = .region(region)
-            }
-        }
-    }
-    private func openSettings() {
-        if let url = URL(string: UIApplication.openSettingsURLString) {
-            UIApplication.shared.open(url)
-        }
-    }
-    
-    // Dynamic fire marker based on fire size and status
-    private func optimizedFireMarker(for fire: CALFireIncident) -> some View {
-        let color = getCALFireMarkerColor(for: fire)
-        let markerSize = getMarkerSize(for: fire)
-        let iconSize = getIconSize(for: fire)
-        
-        return ZStack {
-            // Outer glow effect for larger fires
-            if fire.acresBurned > 1000 {
-                Circle()
-                    .fill(color.opacity(0.4))
-                    .frame(width: markerSize + 20, height: markerSize + 20)
-                    .blur(radius: 8)
-            }
-            
-            // Middle glow layer for medium+ fires
-            if fire.acresBurned > 100 {
-                Circle()
-                    .fill(color.opacity(0.6))
-                    .frame(width: markerSize + 12, height: markerSize + 12)
-                    .blur(radius: 4)
-            }
-            
-            // Main marker with gradient
-            Circle()
-                .fill(
-                    LinearGradient(
-                        gradient: Gradient(colors: [color, color.opacity(0.8)]),
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .frame(width: markerSize, height: markerSize)
-                .overlay(
-                    Circle()
-                        .stroke(Color.white, lineWidth: fire.acresBurned > 1000 ? 3 : 2)
-                        .shadow(color: .black.opacity(0.3), radius: 1)
-                )
-                .shadow(color: color.opacity(0.7), radius: 6, x: 0, y: 3)
-            
-            // Fire icon with dynamic sizing
-            Image(systemName: "flame.fill")
-                .font(.system(size: iconSize, weight: .bold))
-                .foregroundColor(.white)
-                .shadow(color: .black.opacity(0.5), radius: 1)
-        }
-        .accessibilityLabel("\(fire.name) - \(fire.isActive ? "Active" : "Contained") fire - \(Int(fire.acresBurned)) acres")
-    }
-    
-    // Helper functions for dynamic sizing
-    private func getMarkerSize(for fire: CALFireIncident) -> CGFloat {
-        if fire.acresBurned > 10000 {
-            return 36 // Very large fires (reduced from 48)
-        } else if fire.acresBurned > 1000 {
-            return 30 // Large fires (reduced from 36)
-        } else if fire.acresBurned > 100 {
-            return 26 // Medium fires (reduced from 28)
-        } else {
-            return 22 // Small fires (increased from 20)
-        }
-    }
-    
-    private func getIconSize(for fire: CALFireIncident) -> CGFloat {
-        if fire.acresBurned > 10000 {
-            return 16 // Very large fires (reduced from 20)
-        } else if fire.acresBurned > 1000 {
-            return 14 // Large fires (reduced from 16)
-        } else if fire.acresBurned > 100 {
-            return 12 // Medium fires (reduced from 14)
-        } else {
-            return 10 // Small fires (kept same)
-        }
-    }
-    
-    private func getCALFireMarkerColor(for fire: CALFireIncident) -> Color {
-        if fire.isActive {
-            if fire.percentContained < 30 {
-                return Color.red
-            } else if fire.percentContained < 70 {
-                return Color.orange
-            } else {
-                return Color.yellow
-            }
-        } else {
-            return Color.gray
-        }
-    }
-    
-    private func zoomMap(by factor: Double) {
-        guard let currentRegion = region else {
-            print("Cannot zoom, region is not available.")
-            return
-        }
-        let newSpan = MKCoordinateSpan(
-            latitudeDelta: currentRegion.span.latitudeDelta * factor,
-            longitudeDelta: currentRegion.span.longitudeDelta * factor
-        )
-        let newRegion = MKCoordinateRegion(center: currentRegion.center, span: newSpan)
-        cameraPosition = .region(newRegion)
-        region = newRegion
-    }
-}
-// MARK: - Fire Filter Enum
-enum FireFilter: String, CaseIterable {
-    case all = "All"
-    case active = "Active"
-    case highThreat = "High Threat"
-    case contained = "Contained"
-    
-    var displayName: String {
-        switch self {
-        case .all: return "All Fires"
-        case .active: return "Active"
-        case .highThreat: return "High Threat"
-        case .contained: return "Contained"
-        }
-    }
-}
-// MARK: - CAL FIRE Details View - Optimized
-struct CALFireDetailsView: View {
-    let fire: CALFireIncident
-    @Environment(\.dismiss) private var dismiss
-    
-    var body: some View {
-        NavigationView {
-            ZStack {
-                // Background
-                LinearGradient(gradient: Gradient(colors: [.wsDark, .wsOrange.opacity(0.15)]), startPoint: .top, endPoint: .bottom)
-                    .ignoresSafeArea()
-                
-                ScrollView {
-                    VStack(spacing: 20) {
-                        // Header
-                        VStack(spacing: 12) {
-                            HStack {
-                                Image(systemName: "flame.fill")
-                                    .font(.title)
-                                    .foregroundColor(.wsOrange)
-                                
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(fire.name)
-                                        .font(.title2.bold())
-                                        .foregroundColor(.white)
-                                    
-                                    Text(getCALFireThreatLevel(for: fire))
-                                        .font(.subheadline)
-                                        .foregroundColor(.wsYellow)
-                                }
-                                
-                                Spacer()
-                                
-                                Button("Done") {
-                                    dismiss()
-                                }
-                                .foregroundColor(.wsOrange)
-                            }
-                            
-                            // Status indicator
-                            HStack {
-                                Circle()
-                                    .fill(fire.isActive ? Color.wsRed : Color.wsOrange)
-                                    .frame(width: 12, height: 12)
-                                
-                                Text(fire.isActive ? "Active Fire" : "Contained Fire")
-                                    .font(.caption)
-                                    .foregroundColor(.white.opacity(0.8))
-                                
-                                Spacer()
-                            }
-                        }
-                        .padding()
-                        .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(Color.wsDark.opacity(0.6))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .stroke(Color.wsOrange.opacity(0.3), lineWidth: 1)
-                                )
-                        )
-                        
-                        // Fire details
-                        VStack(spacing: 16) {
-                            detailRow(title: "Acres Burned", value: "\(Int(fire.acresBurned)) acres", icon: "flame.fill")
-                            detailRow(title: "Containment", value: "\(Int(fire.percentContained))%", icon: "percent")
-                            detailRow(title: "Started", value: fire.startedDate, icon: "calendar")
-                            detailRow(title: "County", value: fire.county, icon: "mappin.and.ellipse")
-                            detailRow(title: "Location", value: fire.location, icon: "location.fill")
-                        }
-                        .padding()
-                        .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(Color.wsDark.opacity(0.6))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .stroke(Color.wsOrange.opacity(0.3), lineWidth: 1)
-                                )
-                        )
-                        
-                        // Location info
-                        VStack(spacing: 12) {
-                            HStack {
-                                Image(systemName: "location.fill")
-                                    .foregroundColor(.wsOrange)
-                                Text("Coordinates")
-                                    .font(.headline)
-                                    .foregroundColor(.white)
-                                Spacer()
-                            }
-                            
-                            Text("Latitude: \(String(format: "%.4f", fire.coordinate.latitude))")
-                                .font(.caption)
-                                .foregroundColor(.white.opacity(0.8))
-                            
-                            Text("Longitude: \(String(format: "%.4f", fire.coordinate.longitude))")
-                                .font(.caption)
-                                .foregroundColor(.white.opacity(0.8))
-                        }
-                        .padding()
-                        .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(Color.wsDark.opacity(0.6))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .stroke(Color.wsOrange.opacity(0.3), lineWidth: 1)
-                                )
-                        )
-                        
-                        // CAL FIRE link
-                        if !fire.url.isEmpty {
-                            VStack(spacing: 12) {
-                                HStack {
-                                    Image(systemName: "link")
-                                        .foregroundColor(.wsOrange)
-                                    Text("More Information")
-                                        .font(.headline)
-                                        .foregroundColor(.white)
-                                    Spacer()
-                                }
-                                
-                                Button("View on CAL FIRE Website") {
-                                    if let url = URL(string: fire.url) {
-                                        UIApplication.shared.open(url)
-                                    }
-                                }
-                                .foregroundColor(.wsOrange)
-                                .padding()
-                                .background(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .fill(Color.wsOrange.opacity(0.2))
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 12)
-                                                .stroke(Color.wsOrange.opacity(0.5), lineWidth: 1)
-                                        )
-                                )
-                            }
-                            .padding()
-                            .background(
-                                RoundedRectangle(cornerRadius: 16)
-                                    .fill(Color.wsDark.opacity(0.6))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 16)
-                                            .stroke(Color.wsOrange.opacity(0.3), lineWidth: 1)
-                                    )
-                            )
-                        }
-                    }
-                    .padding()
-                }
-            }
-            .navigationBarHidden(true)
-        }
-    }
-    
-    private func detailRow(title: String, value: String, icon: String) -> some View {
-        HStack {
-            Image(systemName: icon)
-                .foregroundColor(.wsOrange)
-                .frame(width: 20)
-            
-            Text(title)
-                .foregroundColor(.white.opacity(0.8))
-            
-            Spacer()
-            
-            Text(value)
-                .font(.subheadline.bold())
-                .foregroundColor(.white)
-        }
-    }
-    
-    private func getCALFireThreatLevel(for fire: CALFireIncident) -> String {
-        if !fire.isActive {
-            return "Contained"
-        }
-        
-        let containment = fire.percentContained
-        if containment >= 70 {
-            return "Low Threat (\(Int(containment))% contained)"
-        } else if containment >= 30 {
-            return "Moderate Threat (\(Int(containment))% contained)"
-        } else {
-            return "High Threat (\(Int(containment))% contained)"
-        }
-    }
-    
-}
-// Preview-safe version of WildfireMap
-struct WildfireMapPreview: View {
-    @StateObject private var locationManager = LocationManager()
-    @State private var cameraPosition: MapCameraPosition = .automatic
-    @State private var region: MKCoordinateRegion? = nil
-    @State private var showLocationError = false
-    @State private var selectedCALFire: CALFireIncident? = nil
-    @State private var selectedFilter: FireFilter = .all
-    @State private var showFilters = false
-    @State private var isLoading = false
-    @State private var lastUpdateTime = Date()
-    
-    // Mock data for preview - no network calls
-    @State private var filteredFires: [CALFireIncident] = [
-        CALFireIncident(
-            name: "Preview Fire",
-            acresBurned: 1250.0,
-            percentContained: 45.0,
-            isActive: true,
-            startedDate: "2025-01-15T10:30:00Z",
-            county: "Los Angeles",
-            location: "Near Malibu",
-            latitude: 34.0259,
-            longitude: -118.7798,
-            url: "https://preview.fire.ca.gov"
-        ),
-        CALFireIncident(
-            name: "Mock Contained Fire",
-            acresBurned: 850.0,
-            percentContained: 100.0,
-            isActive: false,
-            startedDate: "2025-01-10T08:15:00Z",
-            county: "Ventura",
-            location: "Near Oxnard",
-            latitude: 34.1975,
-            longitude: -119.1771,
-            url: "https://preview.fire.ca.gov"
-        )
-    ]
-    
-    var body: some View {
-        NavigationStack {
-            ZStack {
-                // Fire gradient background
-                LinearGradient(
-                    gradient: Gradient(colors: [
-                        Color(red: 0.1, green: 0.05, blue: 0.05),
-                        Color(red: 0.2, green: 0.1, blue: 0.05),
-                        Color(red: 0.15, green: 0.05, blue: 0.0)
-                    ]),
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .ignoresSafeArea()
-                
-                Map(position: $cameraPosition) {
-                    ForEach(filteredFires, id: \.id) { fire in
-                        Annotation(fire.name, coordinate: CLLocationCoordinate2D(latitude: fire.latitude, longitude: fire.longitude)) {
-                            Button(action: {
-                                selectedCALFire = fire
-                            }) {
-                                ZStack {
-                                    Circle()
-                                        .fill(fire.isActive ? Color.red : Color.orange)
-                                        .frame(width: 20, height: 20)
-                                    
-                                    Image(systemName: "flame.fill")
-                                        .foregroundColor(.white)
-                                        .font(.system(size: 10))
-                                }
-                            }
-                        }
-                    }
-                }
-                .mapStyle(.hybrid)
-            }
-            .navigationTitle("Fire Map")
-            .navigationBarTitleDisplayMode(.inline)
-        }
-    }
-}
-#Preview {
-    Text("Map preview disabled")
-}
-*/
-

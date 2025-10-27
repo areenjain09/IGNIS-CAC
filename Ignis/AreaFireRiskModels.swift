@@ -1,35 +1,26 @@
-//
-//  AreaFireRiskModels.swift
-//  Ignis
-//
-//  Created by Areen Jain on 8/4/25.
-//
-
 import Foundation
 import CoreLocation
 import SwiftUI
-
-// MARK: - Fire Risk Level Enum
 
 enum FireRiskLevel: String, CaseIterable, Codable {
     case low = "Low"
     case moderate = "Moderate"
     case high = "High"
     case extreme = "Extreme"
-    
+
     var color: String {
         switch self {
         case .low:
-            return "#4CAF50"    // Green
+            return "#4CAF50"
         case .moderate:
-            return "#FF9800"    // Orange
+            return "#FF9800"
         case .high:
-            return "#FF5722"    // Deep Orange
+            return "#FF5722"
         case .extreme:
-            return "#F44336"    // Red
+            return "#F44336"
         }
     }
-    
+
     var description: String {
         switch self {
         case .low:
@@ -44,30 +35,25 @@ enum FireRiskLevel: String, CaseIterable, Codable {
     }
 }
 
-// MARK: - Risk Factor Model
-
 struct RiskFactor: Identifiable, Codable {
     let id = UUID()
     let name: String
-    let impact: Double      // -1.0 to 1.0
+    let impact: Double
     let description: String
-    let weight: Double      // 0.0 to 1.0
+    let weight: Double
 }
-
-// MARK: - Fire Risk Prediction Model
 
 struct FireRiskPrediction: Identifiable, Codable {
     let id: UUID
     let location: CLLocationCoordinate2D
     let riskLevel: FireRiskLevel
-    let riskScore: Double   // 0.0 to 1.0
-    let confidence: Double  // 0.0 to 1.0
+    let riskScore: Double
+    let confidence: Double
     let factors: [RiskFactor]
     let lastUpdated: Date
     let weatherImpact: String
     let recommendations: [String]
-    
-    // Initializer for creating instances programmatically
+
     init(id: UUID = UUID(), location: CLLocationCoordinate2D, riskLevel: FireRiskLevel, riskScore: Double, confidence: Double, factors: [RiskFactor], lastUpdated: Date, weatherImpact: String, recommendations: [String]) {
         self.id = id
         self.location = location
@@ -79,12 +65,12 @@ struct FireRiskPrediction: Identifiable, Codable {
         self.weatherImpact = weatherImpact
         self.recommendations = recommendations
     }
-    
+
     enum CodingKeys: String, CodingKey {
         case id, riskLevel, riskScore, confidence, factors, lastUpdated, weatherImpact, recommendations
         case location
     }
-    
+
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
@@ -95,15 +81,14 @@ struct FireRiskPrediction: Identifiable, Codable {
         lastUpdated = try container.decode(Date.self, forKey: .lastUpdated)
         weatherImpact = try container.decode(String.self, forKey: .weatherImpact)
         recommendations = try container.decode([String].self, forKey: .recommendations)
-        
-        // Decode location
+
         let locationData = try container.decode([String: Double].self, forKey: .location)
         location = CLLocationCoordinate2D(
             latitude: locationData["latitude"] ?? 0.0,
             longitude: locationData["longitude"] ?? 0.0
         )
     }
-    
+
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(id, forKey: .id)
@@ -114,14 +99,11 @@ struct FireRiskPrediction: Identifiable, Codable {
         try container.encode(lastUpdated, forKey: .lastUpdated)
         try container.encode(weatherImpact, forKey: .weatherImpact)
         try container.encode(recommendations, forKey: .recommendations)
-        
-        // Encode location
+
         let locationData = ["latitude": location.latitude, "longitude": location.longitude]
         try container.encode(locationData, forKey: .location)
     }
 }
-
-// MARK: - Geographic Area Models
 
 struct GeographicArea: Identifiable, Hashable {
     let id = UUID()
@@ -131,11 +113,11 @@ struct GeographicArea: Identifiable, Hashable {
     let bounds: AreaBounds
     let population: Int
     let areaType: AreaType
-    
+
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }
-    
+
     static func == (lhs: GeographicArea, rhs: GeographicArea) -> Bool {
         return lhs.id == rhs.id
     }
@@ -144,7 +126,7 @@ struct GeographicArea: Identifiable, Hashable {
 struct AreaBounds {
     let northEast: CLLocationCoordinate2D
     let southWest: CLLocationCoordinate2D
-    
+
     func contains(_ coordinate: CLLocationCoordinate2D) -> Bool {
         return coordinate.latitude <= northEast.latitude &&
                coordinate.latitude >= southWest.latitude &&
@@ -160,7 +142,7 @@ enum AreaType: String, CaseIterable {
     case region = "Region"
     case wildland = "Wildland"
     case wildlandUrbanInterface = "Wildland-Urban Interface"
-    
+
     var icon: String {
         switch self {
         case .neighborhood: return "house.fill"
@@ -173,13 +155,11 @@ enum AreaType: String, CaseIterable {
     }
 }
 
-// MARK: - Area Fire Risk Prediction
-
 struct AreaFireRiskPrediction: Identifiable {
     let id = UUID()
     let area: GeographicArea
     let riskLevel: FireRiskLevel
-    let riskScore: Double // 0.0 to 1.0
+    let riskScore: Double
     let confidence: Double
     let factors: [RiskFactor]
     let nearbyFires: [NearbyFireInfo]
@@ -187,11 +167,11 @@ struct AreaFireRiskPrediction: Identifiable {
     let evacuationRoutes: [String]
     let shelterCount: Int
     let lastUpdated: Date
-    
+
     var riskPercentage: Int {
         return Int(riskScore * 100)
     }
-    
+
     var riskColor: Color {
         switch riskLevel {
         case .low: return .green
@@ -200,7 +180,7 @@ struct AreaFireRiskPrediction: Identifiable {
         case .extreme: return .red
         }
     }
-    
+
     var alertMessage: String {
         switch riskLevel {
         case .low:
@@ -218,17 +198,15 @@ struct AreaFireRiskPrediction: Identifiable {
 struct NearbyFireInfo: Identifiable {
     let id = UUID()
     let name: String
-    let distance: Double // km
+    let distance: Double
     let acres: Double
     let containment: Double
     let isActive: Bool
 }
 
-// MARK: - Predefined Geographic Areas
-
 class GeographicAreasData {
     static let californiaAreas: [GeographicArea] = [
-        // NORTHERN CALIFORNIA - Bay Area
+
         GeographicArea(
             name: "san_francisco",
             displayName: "San Francisco",
@@ -240,7 +218,7 @@ class GeographicAreasData {
             population: 875000,
             areaType: .city
         ),
-        
+
         GeographicArea(
             name: "oakland",
             displayName: "Oakland",
@@ -252,7 +230,7 @@ class GeographicAreasData {
             population: 440000,
             areaType: .city
         ),
-        
+
         GeographicArea(
             name: "san_jose",
             displayName: "San Jose",
@@ -264,7 +242,7 @@ class GeographicAreasData {
             population: 1035000,
             areaType: .city
         ),
-        
+
         GeographicArea(
             name: "napa",
             displayName: "Napa",
@@ -276,7 +254,7 @@ class GeographicAreasData {
             population: 80000,
             areaType: .city
         ),
-        
+
         GeographicArea(
             name: "santa_rosa",
             displayName: "Santa Rosa",
@@ -288,8 +266,7 @@ class GeographicAreasData {
             population: 180000,
             areaType: .city
         ),
-        
-        // NORTHERN CALIFORNIA - Central Valley & Sierra
+
         GeographicArea(
             name: "sacramento",
             displayName: "Sacramento",
@@ -301,7 +278,7 @@ class GeographicAreasData {
             population: 525000,
             areaType: .city
         ),
-        
+
         GeographicArea(
             name: "stockton",
             displayName: "Stockton",
@@ -313,7 +290,7 @@ class GeographicAreasData {
             population: 315000,
             areaType: .city
         ),
-        
+
         GeographicArea(
             name: "modesto",
             displayName: "Modesto",
@@ -325,7 +302,7 @@ class GeographicAreasData {
             population: 220000,
             areaType: .city
         ),
-        
+
         GeographicArea(
             name: "paradise",
             displayName: "Paradise",
@@ -337,8 +314,7 @@ class GeographicAreasData {
             population: 26000,
             areaType: .city
         ),
-        
-        // CENTRAL CALIFORNIA
+
         GeographicArea(
             name: "fresno",
             displayName: "Fresno",
@@ -350,7 +326,7 @@ class GeographicAreasData {
             population: 545000,
             areaType: .city
         ),
-        
+
         GeographicArea(
             name: "bakersfield",
             displayName: "Bakersfield",
@@ -362,7 +338,7 @@ class GeographicAreasData {
             population: 385000,
             areaType: .city
         ),
-        
+
         GeographicArea(
             name: "monterey",
             displayName: "Monterey",
@@ -374,7 +350,7 @@ class GeographicAreasData {
             population: 30000,
             areaType: .city
         ),
-        
+
         GeographicArea(
             name: "santa_barbara",
             displayName: "Santa Barbara",
@@ -386,8 +362,7 @@ class GeographicAreasData {
             population: 92000,
             areaType: .city
         ),
-        
-        // LOS ANGELES AREA
+
         GeographicArea(
             name: "los_angeles",
             displayName: "Los Angeles",
@@ -399,7 +374,7 @@ class GeographicAreasData {
             population: 4000000,
             areaType: .city
         ),
-        
+
         GeographicArea(
             name: "santa_monica",
             displayName: "Santa Monica",
@@ -411,7 +386,7 @@ class GeographicAreasData {
             population: 93000,
             areaType: .city
         ),
-        
+
         GeographicArea(
             name: "westwood",
             displayName: "Westwood",
@@ -423,7 +398,7 @@ class GeographicAreasData {
             population: 47000,
             areaType: .neighborhood
         ),
-        
+
         GeographicArea(
             name: "beverly_hills",
             displayName: "Beverly Hills",
@@ -435,7 +410,7 @@ class GeographicAreasData {
             population: 34000,
             areaType: .city
         ),
-        
+
         GeographicArea(
             name: "brentwood",
             displayName: "Brentwood",
@@ -447,8 +422,7 @@ class GeographicAreasData {
             population: 31000,
             areaType: .neighborhood
         ),
-        
-        // Central LA Areas
+
         GeographicArea(
             name: "hollywood",
             displayName: "Hollywood",
@@ -460,7 +434,7 @@ class GeographicAreasData {
             population: 61000,
             areaType: .district
         ),
-        
+
         GeographicArea(
             name: "downtown_la",
             displayName: "Downtown LA",
@@ -472,8 +446,7 @@ class GeographicAreasData {
             population: 58000,
             areaType: .district
         ),
-        
-        // Valley Areas (Higher Fire Risk)
+
         GeographicArea(
             name: "malibu",
             displayName: "Malibu",
@@ -485,7 +458,7 @@ class GeographicAreasData {
             population: 13000,
             areaType: .city
         ),
-        
+
         GeographicArea(
             name: "calabasas",
             displayName: "Calabasas",
@@ -497,7 +470,7 @@ class GeographicAreasData {
             population: 24000,
             areaType: .city
         ),
-        
+
         GeographicArea(
             name: "topanga",
             displayName: "Topanga",
@@ -509,8 +482,7 @@ class GeographicAreasData {
             population: 8000,
             areaType: .neighborhood
         ),
-        
-        // San Fernando Valley
+
         GeographicArea(
             name: "woodland_hills",
             displayName: "Woodland Hills",
@@ -522,8 +494,7 @@ class GeographicAreasData {
             population: 67000,
             areaType: .neighborhood
         ),
-        
-        // ORANGE COUNTY
+
         GeographicArea(
             name: "anaheim",
             displayName: "Anaheim",
@@ -535,7 +506,7 @@ class GeographicAreasData {
             population: 352000,
             areaType: .city
         ),
-        
+
         GeographicArea(
             name: "irvine",
             displayName: "Irvine",
@@ -547,7 +518,7 @@ class GeographicAreasData {
             population: 287000,
             areaType: .city
         ),
-        
+
         GeographicArea(
             name: "huntington_beach",
             displayName: "Huntington Beach",
@@ -559,8 +530,7 @@ class GeographicAreasData {
             population: 200000,
             areaType: .city
         ),
-        
-        // SAN DIEGO AREA
+
         GeographicArea(
             name: "san_diego",
             displayName: "San Diego",
@@ -572,7 +542,7 @@ class GeographicAreasData {
             population: 1420000,
             areaType: .city
         ),
-        
+
         GeographicArea(
             name: "escondido",
             displayName: "Escondido",
@@ -584,8 +554,7 @@ class GeographicAreasData {
             population: 152000,
             areaType: .city
         ),
-        
-        // INLAND EMPIRE
+
         GeographicArea(
             name: "riverside",
             displayName: "Riverside",
@@ -597,7 +566,7 @@ class GeographicAreasData {
             population: 330000,
             areaType: .city
         ),
-        
+
         GeographicArea(
             name: "san_bernardino",
             displayName: "San Bernardino",
@@ -609,7 +578,7 @@ class GeographicAreasData {
             population: 222000,
             areaType: .city
         ),
-        
+
         GeographicArea(
             name: "palm_springs",
             displayName: "Palm Springs",
@@ -621,8 +590,7 @@ class GeographicAreasData {
             population: 48000,
             areaType: .city
         ),
-        
-        // HIGH FIRE RISK AREAS
+
         GeographicArea(
             name: "big_sur",
             displayName: "Big Sur",
@@ -634,7 +602,7 @@ class GeographicAreasData {
             population: 1800,
             areaType: .region
         ),
-        
+
         GeographicArea(
             name: "lake_tahoe",
             displayName: "Lake Tahoe",
@@ -646,7 +614,7 @@ class GeographicAreasData {
             population: 23000,
             areaType: .region
         ),
-        
+
         GeographicArea(
             name: "yosemite",
             displayName: "Yosemite Area",
@@ -658,7 +626,7 @@ class GeographicAreasData {
             population: 5000,
             areaType: .region
         ),
-        
+
         GeographicArea(
             name: "redding",
             displayName: "Redding",
@@ -670,7 +638,7 @@ class GeographicAreasData {
             population: 95000,
             areaType: .city
         ),
-        
+
         GeographicArea(
             name: "chico",
             displayName: "Chico",
@@ -682,8 +650,7 @@ class GeographicAreasData {
             population: 101000,
             areaType: .city
         ),
-        
-        // NORTHERN CALIFORNIA WILDLAND AREAS
+
         GeographicArea(
             name: "shasta_trinity",
             displayName: "Shasta-Trinity National Forest",
@@ -695,7 +662,7 @@ class GeographicAreasData {
             population: 5000,
             areaType: .wildland
         ),
-        
+
         GeographicArea(
             name: "mendocino_national_forest",
             displayName: "Mendocino National Forest",
@@ -707,7 +674,7 @@ class GeographicAreasData {
             population: 2000,
             areaType: .wildland
         ),
-        
+
         GeographicArea(
             name: "lassen_national_forest",
             displayName: "Lassen National Forest",
@@ -719,7 +686,7 @@ class GeographicAreasData {
             population: 1000,
             areaType: .wildland
         ),
-        
+
         GeographicArea(
             name: "plumas_national_forest",
             displayName: "Plumas National Forest",
@@ -731,8 +698,7 @@ class GeographicAreasData {
             population: 3000,
             areaType: .wildland
         ),
-        
-        // SIERRA NEVADA WILDLAND AREAS
+
         GeographicArea(
             name: "eldorado_national_forest",
             displayName: "Eldorado National Forest",
@@ -744,7 +710,7 @@ class GeographicAreasData {
             population: 4000,
             areaType: .wildland
         ),
-        
+
         GeographicArea(
             name: "stanislaus_national_forest",
             displayName: "Stanislaus National Forest",
@@ -756,7 +722,7 @@ class GeographicAreasData {
             population: 2500,
             areaType: .wildland
         ),
-        
+
         GeographicArea(
             name: "sierra_national_forest",
             displayName: "Sierra National Forest",
@@ -768,7 +734,7 @@ class GeographicAreasData {
             population: 1500,
             areaType: .wildland
         ),
-        
+
         GeographicArea(
             name: "sequoia_national_forest",
             displayName: "Sequoia National Forest",
@@ -780,8 +746,7 @@ class GeographicAreasData {
             population: 2000,
             areaType: .wildland
         ),
-        
-        // CENTRAL COAST WILDLAND AREAS
+
         GeographicArea(
             name: "los_padres_national_forest",
             displayName: "Los Padres National Forest",
@@ -793,7 +758,7 @@ class GeographicAreasData {
             population: 1000,
             areaType: .wildland
         ),
-        
+
         GeographicArea(
             name: "ventana_wilderness",
             displayName: "Ventana Wilderness",
@@ -805,8 +770,7 @@ class GeographicAreasData {
             population: 100,
             areaType: .wildland
         ),
-        
-        // SOUTHERN CALIFORNIA WILDLAND AREAS
+
         GeographicArea(
             name: "angeles_national_forest",
             displayName: "Angeles National Forest",
@@ -818,7 +782,7 @@ class GeographicAreasData {
             population: 3000,
             areaType: .wildland
         ),
-        
+
         GeographicArea(
             name: "san_bernardino_national_forest",
             displayName: "San Bernardino National Forest",
@@ -830,7 +794,7 @@ class GeographicAreasData {
             population: 4000,
             areaType: .wildland
         ),
-        
+
         GeographicArea(
             name: "cleveland_national_forest",
             displayName: "Cleveland National Forest",
@@ -842,8 +806,7 @@ class GeographicAreasData {
             population: 2000,
             areaType: .wildland
         ),
-        
-        // WILDLAND-URBAN INTERFACE AREAS (HIGH RISK)
+
         GeographicArea(
             name: "grass_valley",
             displayName: "Grass Valley",
@@ -855,7 +818,7 @@ class GeographicAreasData {
             population: 13000,
             areaType: .wildlandUrbanInterface
         ),
-        
+
         GeographicArea(
             name: "auburn",
             displayName: "Auburn",
@@ -867,7 +830,7 @@ class GeographicAreasData {
             population: 14000,
             areaType: .wildlandUrbanInterface
         ),
-        
+
         GeographicArea(
             name: "oroville",
             displayName: "Oroville",
@@ -879,7 +842,7 @@ class GeographicAreasData {
             population: 20000,
             areaType: .wildlandUrbanInterface
         ),
-        
+
         GeographicArea(
             name: "calistoga",
             displayName: "Calistoga",
@@ -891,7 +854,7 @@ class GeographicAreasData {
             population: 5000,
             areaType: .wildlandUrbanInterface
         ),
-        
+
         GeographicArea(
             name: "forestville",
             displayName: "Forestville",
@@ -903,7 +866,7 @@ class GeographicAreasData {
             population: 3000,
             areaType: .wildlandUrbanInterface
         ),
-        
+
         GeographicArea(
             name: "altadena",
             displayName: "Altadena",
@@ -915,7 +878,7 @@ class GeographicAreasData {
             population: 42000,
             areaType: .wildlandUrbanInterface
         ),
-        
+
         GeographicArea(
             name: "julian",
             displayName: "Julian",
@@ -927,8 +890,7 @@ class GeographicAreasData {
             population: 1500,
             areaType: .wildlandUrbanInterface
         ),
-        
-        // DESERT WILDLAND AREAS
+
         GeographicArea(
             name: "mojave_national_preserve",
             displayName: "Mojave National Preserve",
@@ -940,7 +902,7 @@ class GeographicAreasData {
             population: 500,
             areaType: .wildland
         ),
-        
+
         GeographicArea(
             name: "joshua_tree_area",
             displayName: "Joshua Tree Area",
@@ -953,8 +915,7 @@ class GeographicAreasData {
             areaType: .wildlandUrbanInterface
         )
     ]
-    
-    // Convenience accessors for backward compatibility
+
     static var losAngelesAreas: [GeographicArea] {
         return californiaAreas.filter { area in
             let lat = area.center.latitude
@@ -962,53 +923,49 @@ class GeographicAreasData {
             return lat >= 33.7 && lat <= 34.8 && lon >= -118.8 && lon <= -117.0
         }
     }
-    
-    // High priority areas for fast initial loading (15 key areas)
+
     static var priorityAreas: [GeographicArea] {
         let priorityNames = [
-            "san_francisco", "oakland", "san_jose", "los_angeles", "santa_monica", 
-            "malibu", "calabasas", "topanga", "big_sur", "napa", 
+            "san_francisco", "oakland", "san_jose", "los_angeles", "santa_monica",
+            "malibu", "calabasas", "topanga", "big_sur", "napa",
             "redding", "chico", "san_diego", "paradise", "grass_valley"
         ]
         return californiaAreas.filter { area in
             priorityNames.contains(area.name)
         }
     }
-    
+
     static var allAreas: [GeographicArea] {
         return californiaAreas + gridAreas
     }
-    
-    // Additional grid-based areas for comprehensive rural coverage
+
     static var gridAreas: [GeographicArea] {
         var gridPoints: [GeographicArea] = []
-        
-        // Define California bounds
+
         let northLat = 42.0
         let southLat = 32.5
         let westLon = -124.4
         let eastLon = -114.1
-        
-        // Create grid with 0.5 degree spacing for rural coverage
+
         let gridSpacing = 0.5
         var lat = southLat
         var gridIndex = 1
-        
+
         while lat <= northLat {
             var lon = westLon
             while lon <= eastLon {
-                // Only add if not already covered by existing areas
+
                 let coordinate = CLLocationCoordinate2D(latitude: lat, longitude: lon)
                 let isAlreadyCovered = californiaAreas.contains { area in
                     let distance = CLLocation(latitude: area.center.latitude, longitude: area.center.longitude)
                         .distance(from: CLLocation(latitude: lat, longitude: lon))
-                    return distance < 25000 // 25km radius
+                    return distance < 25000
                 }
-                
+
                 if !isAlreadyCovered {
-                    // Determine area type based on location
+
                     let areaType: AreaType = determineAreaType(for: coordinate)
-                    
+
                     gridPoints.append(GeographicArea(
                         name: "grid_\(gridIndex)",
                         displayName: "Grid Point \(gridIndex)",
@@ -1022,43 +979,39 @@ class GeographicAreasData {
                     ))
                     gridIndex += 1
                 }
-                
+
                 lon += gridSpacing
             }
             lat += gridSpacing
         }
-        
+
         return gridPoints
     }
-    
+
     private static func determineAreaType(for coordinate: CLLocationCoordinate2D) -> AreaType {
         let lat = coordinate.latitude
         let lon = coordinate.longitude
-        
-        // Sierra Nevada and Cascade ranges (high wildland risk)
+
         if (lat > 36.0 && lat < 40.0 && lon > -121.0 && lon < -118.0) ||
            (lat > 40.0 && lat < 42.0 && lon > -122.0 && lon < -121.0) {
             return .wildland
         }
-        
-        // Desert regions
+
         if lat < 36.0 && lon > -118.0 {
             return .wildland
         }
-        
-        // Coastal ranges and foothills
+
         if lon < -121.0 || (lat > 34.0 && lat < 37.0 && lon > -119.0 && lon < -117.0) {
             return .wildlandUrbanInterface
         }
-        
-        // Central Valley
+
         if lat > 35.0 && lat < 40.0 && lon > -122.0 && lon < -119.0 {
             return .region
         }
-        
+
         return .wildland
     }
-    
+
     private static func estimatePopulation(for coordinate: CLLocationCoordinate2D, areaType: AreaType) -> Int {
         switch areaType {
         case .wildland:
@@ -1071,19 +1024,19 @@ class GeographicAreasData {
             return Int.random(in: 100...1000)
         }
     }
-    
+
     static func getAreaContaining(coordinate: CLLocationCoordinate2D) -> GeographicArea? {
         return allAreas.first { area in
             area.bounds.contains(coordinate)
         }
     }
-    
+
     static func getAreasWithinRadius(center: CLLocationCoordinate2D, radiusKm: Double) -> [GeographicArea] {
         let centerLocation = CLLocation(latitude: center.latitude, longitude: center.longitude)
-        
+
         return allAreas.filter { area in
             let areaLocation = CLLocation(latitude: area.center.latitude, longitude: area.center.longitude)
-            let distance = centerLocation.distance(from: areaLocation) / 1000.0 // Convert to km
+            let distance = centerLocation.distance(from: areaLocation) / 1000.0
             return distance <= radiusKm
         }
     }

@@ -1,41 +1,39 @@
 import SwiftUI
 
-// MARK: - Flashcard Study View
-/// Spaced repetition flashcard system for effective learning
 struct FlashcardView: View {
     @StateObject private var educationService = EducationService.shared
     @Environment(\.dismiss) private var dismiss
-    
+
     @State private var currentCardIndex = 0
     @State private var showAnswer = false
     @State private var cardOffset = CGSize.zero
     @State private var cardRotation: Double = 0
     @State private var studySession: FlashcardStudySession
     @State private var sessionStats = SessionStats()
-    
+
     private var reviewCards: [Flashcard]
-    
+
     init() {
         let cards = EducationService.shared.getFlashcardsForReview()
-        self.reviewCards = Array(cards.prefix(20)) // Limit to 20 cards per session
+        self.reviewCards = Array(cards.prefix(20))
         self._studySession = State(initialValue: FlashcardStudySession(cards: cards))
     }
-    
+
     private var currentCard: Flashcard? {
         guard currentCardIndex < reviewCards.count else { return nil }
         return reviewCards[currentCardIndex]
     }
-    
+
     private var progress: Double {
         guard !reviewCards.isEmpty else { return 1.0 }
         return Double(currentCardIndex) / Double(reviewCards.count)
     }
-    
+
     var body: some View {
         NavigationStack {
             ZStack {
                 Color.appGradientBackground.ignoresSafeArea()
-                
+
                 if let card = currentCard {
                     VStack(spacing: 0) {
                         headerSection
@@ -60,9 +58,7 @@ struct FlashcardView: View {
                 }
         )
     }
-    
-    // MARK: - View Components
-    
+
     private var headerSection: some View {
         HStack {
             Button(action: { dismiss() }) {
@@ -73,14 +69,14 @@ struct FlashcardView: View {
                     .background(Color.appCard)
                     .clipShape(Circle())
             }
-            
+
             Spacer()
-            
+
             VStack(alignment: .trailing) {
                 Text("Flashcard Review")
                     .font(.appSubheadline.bold())
                     .foregroundColor(.appTextPrimary)
-                
+
                 Text("\(currentCardIndex + 1) of \(reviewCards.count)")
                     .font(.appCaption)
                     .foregroundColor(.appTextSecondary)
@@ -89,34 +85,34 @@ struct FlashcardView: View {
         .padding(.horizontal, 20)
         .padding(.top, 20)
     }
-    
+
     private var progressSection: some View {
         VStack(spacing: 12) {
             ProgressView(value: progress)
                 .progressViewStyle(LinearProgressViewStyle(tint: .appPrimary))
                 .scaleEffect(x: 1, y: 2, anchor: .center)
                 .animation(.easeInOut(duration: 0.3), value: progress)
-            
+
             HStack {
                 Text("\(Int(progress * 100))% Complete")
                     .font(.appSmall)
                     .foregroundColor(.appTextSecondary)
-                
+
                 Spacer()
-                
+
                 HStack(spacing: 16) {
                     StatLabel(
                         value: "\(sessionStats.correct)",
                         label: "Correct",
                         color: .appSuccess
                     )
-                    
+
                     StatLabel(
                         value: "\(sessionStats.incorrect)",
-                        label: "Incorrect", 
+                        label: "Incorrect",
                         color: .appError
                     )
-                    
+
                     StatLabel(
                         value: "\(sessionStats.streak)",
                         label: "Streak",
@@ -128,7 +124,7 @@ struct FlashcardView: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
     }
-    
+
     private func cardSection(card: Flashcard) -> some View {
         VStack(spacing: 20) {
             FlashcardView3D(
@@ -142,7 +138,7 @@ struct FlashcardView: View {
                     showAnswer.toggle()
                 }
             }
-            
+
             if !showAnswer {
                 Button(action: {
                     withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
@@ -165,7 +161,7 @@ struct FlashcardView: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 40)
     }
-    
+
     private var difficultyButtons: some View {
         VStack(spacing: 16) {
             if showAnswer {
@@ -173,7 +169,7 @@ struct FlashcardView: View {
                     .font(.appSubheadline)
                     .foregroundColor(.appTextSecondary)
                     .multilineTextAlignment(.center)
-                
+
                 HStack(spacing: 12) {
                     ForEach(FlashcardDifficulty.allCases, id: \.self) { difficulty in
                         DifficultyButton(
@@ -183,13 +179,13 @@ struct FlashcardView: View {
                     }
                 }
             } else {
-                // Hint section
+
                 if let currentCard = currentCard, !currentCard.tags.isEmpty {
                     HStack {
                         Image(systemName: "tag.fill")
                             .foregroundColor(.appTextTertiary)
                             .font(.caption)
-                        
+
                         Text(currentCard.tags.joined(separator: " • "))
                             .font(.appSmall)
                             .foregroundColor(.appTextTertiary)
@@ -205,26 +201,26 @@ struct FlashcardView: View {
         .padding(.bottom, 40)
         .animation(.easeInOut(duration: 0.3), value: showAnswer)
     }
-    
+
     private var completionView: some View {
         VStack(spacing: 32) {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 80))
                 .foregroundColor(.appSuccess)
-            
+
             VStack(spacing: 16) {
                 Text("Session Complete!")
                     .font(.appTitle)
                     .foregroundColor(.appTextPrimary)
-                
+
                 Text("Great job! You've reviewed all your flashcards for today.")
                     .font(.appBody)
                     .foregroundColor(.appTextSecondary)
                     .multilineTextAlignment(.center)
             }
-            
+
             SessionSummaryView(stats: sessionStats, totalCards: reviewCards.count)
-            
+
             Button(action: { dismiss() }) {
                 Text("Continue Learning")
                     .font(.appSubheadline.bold())
@@ -236,26 +232,20 @@ struct FlashcardView: View {
         }
         .padding(20)
     }
-    
-    // MARK: - Helper Methods
-    
+
     private func selectDifficulty(_ difficulty: FlashcardDifficulty) {
         guard let card = currentCard else { return }
-        
-        // Update session stats
+
         updateSessionStats(difficulty: difficulty)
-        
-        // Review the card with spaced repetition
+
         educationService.reviewFlashcard(card, difficulty: difficulty)
-        
-        // Haptic feedback
+
         let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
         impactFeedback.impactOccurred()
-        
-        // Move to next card
+
         nextCard()
     }
-    
+
     private func updateSessionStats(difficulty: FlashcardDifficulty) {
         switch difficulty {
         case .again:
@@ -271,10 +261,10 @@ struct FlashcardView: View {
             sessionStats.correct += 1
             sessionStats.streak += 1
         }
-        
+
         sessionStats.maxStreak = max(sessionStats.maxStreak, sessionStats.streak)
     }
-    
+
     private func nextCard() {
         withAnimation(.easeInOut(duration: 0.3)) {
             showAnswer = false
@@ -283,25 +273,25 @@ struct FlashcardView: View {
             cardRotation = 0
         }
     }
-    
+
     private func handleSwipe(_ value: DragGesture.Value) {
         let swipeThreshold: CGFloat = 100
-        
+
         withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
             if abs(value.translation.width) > swipeThreshold {
                 if value.translation.width > 0 {
-                    // Swipe right - Easy
+
                     if showAnswer {
                         selectDifficulty(.easy)
                     }
                 } else {
-                    // Swipe left - Again
+
                     if showAnswer {
                         selectDifficulty(.again)
                     }
                 }
             } else {
-                // Snap back
+
                 cardOffset = .zero
                 cardRotation = 0
             }
@@ -309,18 +299,17 @@ struct FlashcardView: View {
     }
 }
 
-// MARK: - 3D Flashcard View
 struct FlashcardView3D: View {
     let card: Flashcard
     let showAnswer: Bool
     let offset: CGSize
     let rotation: Double
-    
+
     @State private var isFlipped = false
-    
+
     var body: some View {
         ZStack {
-            // Back of card (Answer)
+
             CardFace(
                 text: card.back,
                 isAnswer: true,
@@ -331,8 +320,7 @@ struct FlashcardView3D: View {
                 axis: (x: 0, y: 1, z: 0)
             )
             .opacity(showAnswer ? 1 : 0)
-            
-            // Front of card (Question)
+
             CardFace(
                 text: card.front,
                 isAnswer: false,
@@ -360,7 +348,7 @@ struct CardFace: View {
     let text: String
     let isAnswer: Bool
     let difficulty: DifficultyLevel
-    
+
     var body: some View {
         VStack(spacing: 20) {
             if !isAnswer {
@@ -368,9 +356,9 @@ struct CardFace: View {
                     Text("Question")
                         .font(.appSmall.bold())
                         .foregroundColor(.appTextTertiary)
-                    
+
                     Spacer()
-                    
+
                     DifficultyBadge(difficulty: difficulty)
                 }
             } else {
@@ -378,23 +366,23 @@ struct CardFace: View {
                     Text("Answer")
                         .font(.appSmall.bold())
                         .foregroundColor(.appTextTertiary)
-                    
+
                     Spacer()
-                    
+
                     Image(systemName: "lightbulb.fill")
                         .foregroundColor(.appWarning)
                         .font(.caption)
                 }
             }
-            
+
             Spacer()
-            
+
             Text(text)
                 .font(.appHeadline)
                 .foregroundColor(.appTextPrimary)
                 .multilineTextAlignment(.center)
                 .lineLimit(nil)
-            
+
             Spacer()
         }
         .padding(24)
@@ -407,12 +395,10 @@ struct CardFace: View {
     }
 }
 
-// MARK: - Supporting Views
-
 struct DifficultyButton: View {
     let difficulty: FlashcardDifficulty
     let action: () -> Void
-    
+
     private var config: (icon: String, title: String, subtitle: String) {
         switch difficulty {
         case .again:
@@ -425,18 +411,18 @@ struct DifficultyButton: View {
             return ("checkmark.circle.fill", "Easy", "4d")
         }
     }
-    
+
     var body: some View {
         Button(action: action) {
             VStack(spacing: 6) {
                 Image(systemName: config.icon)
                     .font(.title2)
                     .foregroundColor(difficulty.color)
-                
+
                 Text(config.title)
                     .font(.appCaption.bold())
                     .foregroundColor(.appTextPrimary)
-                
+
                 Text(config.subtitle)
                     .font(.appSmall)
                     .foregroundColor(.appTextTertiary)
@@ -458,7 +444,7 @@ struct DifficultyButton: View {
 
 struct DifficultyBadge: View {
     let difficulty: DifficultyLevel
-    
+
     var body: some View {
         Text(difficulty.rawValue)
             .font(.appSmall.bold())
@@ -474,13 +460,13 @@ struct StatLabel: View {
     let value: String
     let label: String
     let color: Color
-    
+
     var body: some View {
         VStack(spacing: 2) {
             Text(value)
                 .font(.appCaption.bold())
                 .foregroundColor(color)
-            
+
             Text(label)
                 .font(.appSmall)
                 .foregroundColor(.appTextTertiary)
@@ -491,18 +477,18 @@ struct StatLabel: View {
 struct SessionSummaryView: View {
     let stats: SessionStats
     let totalCards: Int
-    
+
     private var accuracy: Double {
         let total = stats.correct + stats.incorrect
         return total > 0 ? Double(stats.correct) / Double(total) : 0.0
     }
-    
+
     var body: some View {
         VStack(spacing: 16) {
             Text("Session Summary")
                 .font(.appHeadline)
                 .foregroundColor(.appTextPrimary)
-            
+
             HStack(spacing: 20) {
                 SummaryStatView(
                     title: "Cards Reviewed",
@@ -510,14 +496,14 @@ struct SessionSummaryView: View {
                     icon: "rectangle.stack.fill",
                     color: .appPrimary
                 )
-                
+
                 SummaryStatView(
                     title: "Accuracy",
                     value: "\(Int(accuracy * 100))%",
                     icon: "target",
                     color: .appSuccess
                 )
-                
+
                 SummaryStatView(
                     title: "Best Streak",
                     value: "\(stats.maxStreak)",
@@ -536,17 +522,17 @@ struct SummaryStatView: View {
     let value: String
     let icon: String
     let color: Color
-    
+
     var body: some View {
         VStack(spacing: 8) {
             Image(systemName: icon)
                 .font(.title2)
                 .foregroundColor(color)
-            
+
             Text(value)
                 .font(.appSubheadline.bold())
                 .foregroundColor(.appTextPrimary)
-            
+
             Text(title)
                 .font(.appSmall)
                 .foregroundColor(.appTextSecondary)
@@ -556,13 +542,11 @@ struct SummaryStatView: View {
     }
 }
 
-// MARK: - Data Types
-
 struct FlashcardStudySession {
     let cards: [Flashcard]
     let startTime = Date()
     var endTime: Date?
-    
+
     var duration: TimeInterval {
         (endTime ?? Date()).timeIntervalSince(startTime)
     }
@@ -575,7 +559,6 @@ struct SessionStats {
     var maxStreak = 0
 }
 
-// MARK: - Preview
 struct FlashcardView_Previews: PreviewProvider {
     static var previews: some View {
         FlashcardView()

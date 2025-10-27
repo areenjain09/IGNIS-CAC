@@ -1,17 +1,8 @@
-//
-//  LegislativeDataService.swift
-//  Ignis
-//
-//  Created by Areen Jain on 8/3/25.
-//
-
 import Foundation
 import SwiftUI
 
-/// Service for fetching real legislative data for California's 32nd district
 class LegislativeDataService: ObservableObject {
-    // MARK: - Published Properties
-    
+
     @Published var policies: [Policy] = []
     @Published var funding: [Funding] = []
     @Published var representatives: [Representative] = []
@@ -19,206 +10,180 @@ class LegislativeDataService: ObservableObject {
     @Published var spendingData: [SpendingData] = []
     @Published var isLoading = false
     @Published var errorMessage: String?
-    
-    // MARK: - API Configuration
-    
+
     private let openStatesBaseURL = "https://openstates.org/api/v1"
     private let congressBaseURL = "https://api.congress.gov/v3"
-    
-    // TODO: Replace with your actual API keys
-    private let openStatesAPIKey = "YOUR_OPENSTATES_API_KEY" // Get from: https://openstates.org/api/
-    private let congressAPIKey = "zzxop9vSeeab3XEPjJNELc92sDTLe5VEnQFfVULC" // Congress.gov API Key
-    private let californiaAPIKey = "YOUR_CALIFORNIA_API_KEY" // Contact: grants@dgs.ca.gov
-    
-    // MARK: - District Information
-    
+
+    private let openStatesAPIKey = "YOUR_OPENSTATES_API_KEY"
+    private let congressAPIKey = "zzxop9vSeeab3XEPjJNELc92sDTLe5VEnQFfVULC"
+    private let californiaAPIKey = "YOUR_CALIFORNIA_API_KEY"
+
     private let district32 = "32"
     private let state = "CA"
-    
-    // MARK: - Initialization
-    
+
     init() {
-        // Don't fetch data during init to avoid state modification during view update
+
     }
-    
-    // MARK: - Configuration Helper
-    
-    /// Configure API keys for real data access
-    /// Call this method after getting your API keys
+
     func configureAPIKeys(openStates: String, congress: String, california: String) {
-        // In a real app, you'd store these securely
-        // For now, we'll use the sample data until you get API keys
+
         print("🔑 API Keys configured!")
         print("📊 OpenStates: \(openStates.isEmpty ? "Not set" : "Set")")
         print("🏛️ Congress: \(congress.isEmpty ? "Not set" : "Set")")
         print("🌉 California: \(california.isEmpty ? "Not set" : "Set")")
     }
-    
-    // MARK: - Public Methods
-    
+
     func fetchLegislativeData() {
         isLoading = true
         errorMessage = nil
-        
-        // Use hardcoded real CA-32 data instead of API calls
+
         print("📊 Loading real CA-32 legislative data...")
         loadSampleData()
         isLoading = false
     }
-    
-    /// Check if we have valid API keys configured
+
     private func hasValidAPIKeys() -> Bool {
         let hasValidKeys = openStatesAPIKey != "YOUR_OPENSTATES_API_KEY" ||
                           congressAPIKey != "YOUR_CONGRESS_API_KEY" ||
                           californiaAPIKey != "YOUR_CALIFORNIA_API_KEY"
-        
+
         print("🔑 API Key Check:")
         print("  OpenStates: \(openStatesAPIKey != "YOUR_OPENSTATES_API_KEY" ? "✅ Valid" : "❌ Not set")")
         print("  Congress: \(congressAPIKey != "YOUR_CONGRESS_API_KEY" ? "✅ Valid" : "❌ Not set")")
         print("  California: \(californiaAPIKey != "YOUR_CALIFORNIA_API_KEY" ? "✅ Valid" : "❌ Not set")")
         print("  Result: \(hasValidKeys ? "✅ Has valid keys" : "❌ No valid keys")")
-        
+
         return hasValidKeys
     }
-    
-    // MARK: - API Methods
-    
-    /// Fetch wildfire-related policies from California Legislature
+
     private func fetchPolicies() async throws -> [Policy] {
-        // Using OpenStates API for California legislation
+
         let urlString = "\(openStatesBaseURL)/bills/?state=ca&search=wildfire&apikey=\(openStatesAPIKey)"
-        
+
         guard let url = URL(string: urlString) else {
             throw LegislativeDataError.invalidURL
         }
-        
+
         var request = URLRequest(url: url)
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
+
         let (data, response) = try await URLSession.shared.data(for: request)
-        
+
         guard let httpResponse = response as? HTTPURLResponse else {
             throw LegislativeDataError.invalidResponse
         }
-        
+
         if httpResponse.statusCode != 200 {
             throw LegislativeDataError.apiError(httpResponse.statusCode)
         }
-        
+
         return try parsePolicies(from: data)
     }
-    
-    /// Fetch available funding opportunities
+
     private func fetchFunding() async throws -> [Funding] {
-        // Using California Grants Portal API
+
         let urlString = "https://www.grants.ca.gov/api/grants?keywords=wildfire&category=emergency"
-        
+
         guard let url = URL(string: urlString) else {
             throw LegislativeDataError.invalidURL
         }
-        
+
         let (data, response) = try await URLSession.shared.data(from: url)
-        
+
         guard let httpResponse = response as? HTTPURLResponse else {
             throw LegislativeDataError.invalidResponse
         }
-        
+
         if httpResponse.statusCode != 200 {
             throw LegislativeDataError.apiError(httpResponse.statusCode)
         }
-        
+
         return try parseFunding(from: data)
     }
-    
-    /// Fetch representatives for CA-32
+
     private func fetchRepresentatives() async throws -> [Representative] {
-        // Using Congress.gov API
+
         let urlString = "\(congressBaseURL)/members?congress=118&state=CA&district=32&api_key=\(congressAPIKey)"
-        
+
         guard let url = URL(string: urlString) else {
             throw LegislativeDataError.invalidURL
         }
-        
+
         var request = URLRequest(url: url)
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
+
         let (data, response) = try await URLSession.shared.data(for: request)
-        
+
         guard let httpResponse = response as? HTTPURLResponse else {
             throw LegislativeDataError.invalidResponse
         }
-        
+
         if httpResponse.statusCode != 200 {
             throw LegislativeDataError.apiError(httpResponse.statusCode)
         }
-        
+
         return try parseRepresentatives(from: data)
     }
-    
-    /// Fetch upcoming events
+
     private func fetchEvents() async throws -> [Event] {
-        // Using California Legislature API
+
         let urlString = "https://api.legislature.ca.gov/events?committee=wildfire&date=\(Date().ISO8601String())"
-        
+
         guard let url = URL(string: urlString) else {
             throw LegislativeDataError.invalidURL
         }
-        
+
         let (data, response) = try await URLSession.shared.data(from: url)
-        
+
         guard let httpResponse = response as? HTTPURLResponse else {
             throw LegislativeDataError.invalidResponse
         }
-        
+
         if httpResponse.statusCode != 200 {
             throw LegislativeDataError.apiError(httpResponse.statusCode)
         }
-        
+
         return try parseEvents(from: data)
     }
-    
-    /// Fetch spending data from California budget
+
     private func fetchSpendingData() async throws -> [SpendingData] {
-        // Using California Department of Finance API
+
         let urlString = "https://api.dof.ca.gov/budget/wildfire-spending"
-        
+
         guard let url = URL(string: urlString) else {
             throw LegislativeDataError.invalidURL
         }
-        
+
         let (data, response) = try await URLSession.shared.data(from: url)
-        
+
         guard let httpResponse = response as? HTTPURLResponse else {
             throw LegislativeDataError.invalidResponse
         }
-        
+
         if httpResponse.statusCode != 200 {
             throw LegislativeDataError.apiError(httpResponse.statusCode)
         }
-        
+
         return try parseSpendingData(from: data)
     }
-    
-    // MARK: - Parsing Methods
-    
+
     private func parsePolicies(from data: Data) throws -> [Policy] {
-        // For now, return sample data since APIs require authentication
-        // In production, you would parse the actual JSON response
+
         return samplePolicies
     }
-    
+
     private func parseFunding(from data: Data) throws -> [Funding] {
         return sampleFunding
     }
-    
+
     private func parseRepresentatives(from data: Data) throws -> [Representative] {
-        // Try to parse real Congress.gov data
+
         do {
             let decoder = JSONDecoder()
             let response = try decoder.decode(CongressResponse.self, from: data)
-            
+
             if let members = response.members {
                 return members.map { member in
                     Representative(
@@ -236,21 +201,18 @@ class LegislativeDataService: ObservableObject {
         } catch {
             print("⚠️ Could not parse Congress.gov data: \(error)")
         }
-        
-        // Fall back to sample data
+
         return sampleRepresentatives
     }
-    
+
     private func parseEvents(from data: Data) throws -> [Event] {
         return sampleEvents
     }
-    
+
     private func parseSpendingData(from data: Data) throws -> [SpendingData] {
         return sampleSpendingData
     }
-    
-    // MARK: - Fallback Data
-    
+
     private func loadSampleData() {
         policies = samplePolicies
         funding = sampleFunding
@@ -259,8 +221,6 @@ class LegislativeDataService: ObservableObject {
         spendingData = sampleSpendingData
     }
 }
-
-// MARK: - Data Models
 
 struct Representative: Identifiable, Codable {
     let id = UUID()
@@ -290,8 +250,6 @@ enum EventType: String, Codable, CaseIterable {
     case forum = "Community Forum"
     case workshop = "Workshop"
 }
-
-// MARK: - Real CA-32 Data (Hardcoded from Official Sources)
 
 let sampleRepresentatives = [
     Representative(
@@ -369,14 +327,12 @@ let sampleSpendingData = [
     SpendingData(year: 2024, prevention: 600, recovery: 3500)
 ]
 
-// MARK: - Error Types
-
 enum LegislativeDataError: Error, LocalizedError {
     case invalidURL
     case invalidResponse
     case apiError(Int)
     case parsingError
-    
+
     var errorDescription: String? {
         switch self {
         case .invalidURL:
@@ -391,8 +347,6 @@ enum LegislativeDataError: Error, LocalizedError {
     }
 }
 
-// MARK: - Congress.gov API Models
-
 struct CongressResponse: Codable {
     let members: [CongressMember]?
 }
@@ -404,7 +358,7 @@ struct CongressMember: Codable {
     let phone: String?
     let url: String?
     let office: String?
-    
+
     enum CodingKeys: String, CodingKey {
         case name = "name"
         case party = "party"
@@ -415,11 +369,9 @@ struct CongressMember: Codable {
     }
 }
 
-// MARK: - Extensions
-
 extension Date {
     func ISO8601String() -> String {
         let formatter = ISO8601DateFormatter()
         return formatter.string(from: self)
     }
-} 
+}

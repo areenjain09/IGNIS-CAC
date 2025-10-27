@@ -1,7 +1,6 @@
 import Foundation
 import Combine
 
-// MARK: - Shared News Models
 enum NewsSeverity {
     case low, medium, high
 }
@@ -10,15 +9,14 @@ struct FireNews: Identifiable {
     let id = UUID()
     let title: String
     let summary: String
-    let date: String // formatted like "MMM d"
+    let date: String
     let severity: NewsSeverity
     let url: URL?
-    
-    // Used for sorting by recency
+
     var parsedDate: Date {
         let fmt = DateFormatter()
         fmt.dateFormat = "MMM d"
-        // Assume current year for RSS short dates
+
         let composed = date + " " + String(Calendar.current.component(.year, from: Date()))
         fmt.dateFormat = "MMM d yyyy"
         return fmt.date(from: composed) ?? Date.distantPast
@@ -27,42 +25,42 @@ struct FireNews: Identifiable {
 
 final class FireNewsService: ObservableObject {
     static let shared = FireNewsService()
-    
+
     @Published var items: [FireNews] = []
     @Published var lastUpdated: Date?
     @Published var isLoading = false
-    
+
     private var timer: Timer?
-    private let refreshInterval: TimeInterval = 24 * 60 * 60 // daily
+    private let refreshInterval: TimeInterval = 24 * 60 * 60
     private var isStarted = false
-    
+
     private let sources: [URL] = [
         URL(string: "https://news.google.com/rss/search?q=california%20wildfire&hl=en-US&gl=US&ceid=US:en")!,
         URL(string: "https://news.google.com/rss/search?q=cal%20fire%20incident&hl=en-US&gl=US&ceid=US:en")!,
         URL(string: "https://news.google.com/rss/search?q=evacuation%20wildfire&hl=en-US&gl=US&ceid=US:en")!
     ]
-    
+
     private init() {
-        // Don't start immediately
+
     }
-    
+
     func startPeriodicUpdates() {
         guard !isStarted else { return }
         isStarted = true
-        
+
         fetchLatest()
         timer?.invalidate()
         timer = Timer.scheduledTimer(withTimeInterval: refreshInterval, repeats: true) { [weak self] _ in
             self?.fetchLatest()
         }
     }
-    
-    func stop() { 
+
+    func stop() {
         isStarted = false
-        timer?.invalidate(); 
-        timer = nil 
+        timer?.invalidate();
+        timer = nil
     }
-    
+
     func fetchLatest() {
         isLoading = true
         Task { @MainActor in
@@ -75,7 +73,7 @@ final class FireNewsService: ObservableObject {
             var flattened = results.flatMap { $0 }
                 .sorted { $0.parsedDate > $1.parsedDate }
             if flattened.isEmpty {
-                // Minimal fallback: generic wildfire query
+
                 flattened = await self.fetchRSS(url: URL(string: "https://news.google.com/rss/search?q=wildfire&hl=en-US&gl=US&ceid=US:en")!)
             }
             self.items = Array(flattened.prefix(3))
@@ -83,7 +81,7 @@ final class FireNewsService: ObservableObject {
             self.isLoading = false
         }
     }
-    
+
     private func fetchRSS(url: URL) async -> [FireNews] {
         do {
             let (data, response) = try await URLSession.shared.data(from: url)
@@ -94,10 +92,10 @@ final class FireNewsService: ObservableObject {
             return []
         }
     }
-    
+
     private func parseRSS(xml: String, source: URL) -> [FireNews] {
         var items: [FireNews] = []
-        // naive RSS item extraction
+
         let itemRegex = try? NSRegularExpression(pattern: "<item[\\n\\s\\S]*?</item>", options: [.caseInsensitive])
         let range = NSRange(xml.startIndex..<xml.endIndex, in: xml)
         itemRegex?.enumerateMatches(in: xml, options: [], range: range) { match, _, _ in
@@ -108,26 +106,21 @@ final class FireNewsService: ObservableObject {
             let desc = self.firstMatch(in: itemXML, pattern: "<description>([\\n\\s\\S]*?)</description>")?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             let pubDate = self.firstMatch(in: itemXML, pattern: "<pubDate>([\\n\\s\\S]*?)</pubDate>")?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
             guard !title.isEmpty else { return }
-            
-            // Parse the actual date for filtering
+
             let dateFormatter = DateFormatter()
             dateFormatter.locale = Locale(identifier: "en_US_POSIX")
             dateFormatter.dateFormat = "EEE, dd MMM yyyy HH:mm:ss zzz"
             guard let parsedDate = dateFormatter.date(from: pubDate) else { return }
-            
-            // Only include news from the last 7 days
+
             let calendar = Calendar.current
             let sevenDaysAgo = calendar.date(byAdding: .day, value: -7, to: Date()) ?? Date()
             guard parsedDate >= sevenDaysAgo else { return }
-            
-            // Clean up the title and description
+
             let cleanTitle = decodeHTMLEntities(stripHTML(title))
             let cleanDesc = decodeHTMLEntities(stripHTML(desc))
-            
-            // Skip if title is still empty after cleaning
+
             guard !cleanTitle.isEmpty else { return }
-            
-            // Additional aggressive cleaning for description
+
             let finalDesc = cleanDesc
                 .replacingOccurrences(of: "&nbsp;", with: " ")
                 .replacingOccurrences(of: "&amp;", with: "&")
@@ -139,27 +132,27 @@ final class FireNewsService: ObservableObject {
                 .replacingOccurrences(of: "&mdash;", with: "—")
                 .replacingOccurrences(of: "&ndash;", with: "–")
                 .replacingOccurrences(of: "&hellip;", with: "...")
-                // Remove any remaining HTML-like patterns
+
                 .replacingOccurrences(of: "<[^>]*>", with: "", options: .regularExpression)
                 .replacingOccurrences(of: "href=", with: "")
                 .replacingOccurrences(of: "target=", with: "")
                 .replacingOccurrences(of: "https?://[^\\s]+", with: "", options: .regularExpression)
                 .replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
                 .trimmingCharacters(in: .whitespacesAndNewlines)
-            
+
             let url = URL(string: linkStr)
             let news = FireNews(
                 title: cleanTitle,
-                summary: "", // Remove description entirely
+                summary: "",
                 date: shortDate(pubDate),
-                severity: inferSeverity(title: cleanTitle, description: cleanTitle), // Use title for severity
+                severity: inferSeverity(title: cleanTitle, description: cleanTitle),
                 url: url
             )
             items.append(news)
         }
         return items
     }
-    
+
     private func firstMatch(in text: String, pattern: String) -> String? {
         let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive])
         let range = NSRange(text.startIndex..<text.endIndex, in: text)
@@ -167,7 +160,7 @@ final class FireNewsService: ObservableObject {
               let r = Range(m.range(at: 1), in: text) else { return nil }
         return String(text[r])
     }
-    
+
     private func decodeHTMLEntities(_ s: String) -> String {
         var str = s.replacingOccurrences(of: "&amp;", with: "&")
         str = str.replacingOccurrences(of: "&nbsp;", with: " ")
@@ -181,25 +174,22 @@ final class FireNewsService: ObservableObject {
         str = str.replacingOccurrences(of: "&hellip;", with: "...")
         return str
     }
-    
+
     private func stripHTML(_ s: String) -> String {
         var str = s
-        
-        // Remove all HTML tags more aggressively
+
         str = str.replacingOccurrences(of: "<[^>]*>", with: "", options: .regularExpression)
-        
-        // Remove any remaining HTML entities that might have been missed
+
         str = str.replacingOccurrences(of: "&[a-zA-Z0-9#]+;", with: "", options: .regularExpression)
-        
-        // Clean up multiple spaces and trim
+
         str = str.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
         str = str.trimmingCharacters(in: .whitespacesAndNewlines)
-        
+
         return str
     }
-    
+
     private func shortDate(_ pubDate: String) -> String {
-        // Attempt RFC 1123 parsing, fallback to today
+
         let fmt = DateFormatter()
         fmt.locale = Locale(identifier: "en_US_POSIX")
         fmt.dateFormat = "EEE, dd MMM yyyy HH:mm:ss Z"
@@ -208,7 +198,7 @@ final class FireNewsService: ObservableObject {
         out.dateFormat = "MMM d"
         return out.string(from: d)
     }
-    
+
     private func inferSeverity(title: String, description: String) -> NewsSeverity {
         let text = (title + " " + description).lowercased()
         if text.contains("evacuation") || text.contains("red flag") || text.contains("warning") { return .high }
@@ -219,7 +209,7 @@ final class FireNewsService: ObservableObject {
 
 final class FireDataService: ObservableObject {
     static let shared = FireDataService()
-    
+
     @Published private(set) var calFireIncidents: [CALFireIncident] = []
     @Published private(set) var nasaFireStatistics: NASAFireStatistics? = nil
     @Published private(set) var isLoading: Bool = false
@@ -230,13 +220,13 @@ final class FireDataService: ObservableObject {
     private let calFireDetailService = CalFireDetailService.shared
     private var cancellables: Set<AnyCancellable> = []
     private var isInitialized = false
-    
+
     private init() {
         setupBindings()
     }
-    
+
     private func setupBindings() {
-        // Cal Fire service bindings (for map data)
+
         calFireService.$incidents
             .receive(on: DispatchQueue.main)
             .sink { [weak self] incidents in
@@ -244,7 +234,6 @@ final class FireDataService: ObservableObject {
             }
             .store(in: &cancellables)
 
-        // NASA FIRMS service bindings (for nationwide statistics)
         nasaFirmsService.$statistics
             .receive(on: DispatchQueue.main)
             .sink { [weak self] statistics in
@@ -252,7 +241,6 @@ final class FireDataService: ObservableObject {
             }
             .store(in: &cancellables)
 
-        // Combine loading states from both services
         Publishers.CombineLatest(calFireService.$isLoading, nasaFirmsService.$isLoading)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] calFireLoading, nasaLoading in
@@ -260,7 +248,6 @@ final class FireDataService: ObservableObject {
             }
             .store(in: &cancellables)
 
-        // Combine error messages from both services
         Publishers.CombineLatest(calFireService.$errorMessage, nasaFirmsService.$errorMessage)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] calFireError, nasaError in
@@ -276,8 +263,7 @@ final class FireDataService: ObservableObject {
     func start() {
         guard !isInitialized else { return }
         isInitialized = true
-        
-        // Start services on main queue to avoid threading issues
+
         DispatchQueue.main.async { [weak self] in
             self?.calFireService.startPeriodicUpdates()
             self?.nasaFirmsService.startPeriodicUpdates()
@@ -287,17 +273,15 @@ final class FireDataService: ObservableObject {
 
     func refreshNow() {
         guard isInitialized else { return }
-        
+
         calFireService.fetchCalFireData()
         nasaFirmsService.fetchFireData()
         Task { await calFireDetailService.startPeriodicRefresh() }
     }
-    
+
     func stop() {
         isInitialized = false
         calFireService.stopPeriodicUpdates()
-        // NASAFIRMSService timer will be invalidated in deinit
+
     }
 }
-
-

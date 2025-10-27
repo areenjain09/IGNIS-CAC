@@ -4,29 +4,27 @@ import SwiftUI
 
 class NotificationService: NSObject, ObservableObject, UNUserNotificationCenterDelegate {
     static let shared = NotificationService()
-    
+
     @Published var isAuthorized = false
     @Published var authorizationStatus: UNAuthorizationStatus = .notDetermined
-    
+
     override init() {
         super.init()
         UNUserNotificationCenter.current().delegate = self
         checkAuthorizationStatus()
     }
-    
-    // MARK: - Authorization
-    
+
     func requestAuthorization() async {
         do {
             let granted = try await UNUserNotificationCenter.current().requestAuthorization(
                 options: [.alert, .badge, .sound, .criticalAlert]
             )
-            
+
             DispatchQueue.main.async {
                 self.isAuthorized = granted
                 self.checkAuthorizationStatus()
             }
-            
+
             if granted {
                 await registerForRemoteNotifications()
             }
@@ -34,7 +32,7 @@ class NotificationService: NSObject, ObservableObject, UNUserNotificationCenterD
             print("Error requesting notification authorization: \(error)")
         }
     }
-    
+
     private func checkAuthorizationStatus() {
         UNUserNotificationCenter.current().getNotificationSettings { settings in
             DispatchQueue.main.async {
@@ -43,15 +41,13 @@ class NotificationService: NSObject, ObservableObject, UNUserNotificationCenterD
             }
         }
     }
-    
+
     private func registerForRemoteNotifications() async {
         await MainActor.run {
             UIApplication.shared.registerForRemoteNotifications()
         }
     }
-    
-    // MARK: - Local Notifications
-    
+
     func scheduleEmergencyAlert(title: String, body: String, fireLocation: String) {
         let content = UNMutableNotificationContent()
         content.title = title
@@ -59,20 +55,19 @@ class NotificationService: NSObject, ObservableObject, UNUserNotificationCenterD
         content.sound = .defaultCritical
         content.categoryIdentifier = "EMERGENCY_ALERT"
         content.userInfo = ["fireLocation": fireLocation]
-        
-        // Add emergency alert sound and critical priority
+
         content.interruptionLevel = .critical
-        
+
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
         let request = UNNotificationRequest(identifier: "emergency_alert_\(Date().timeIntervalSince1970)", content: content, trigger: trigger)
-        
+
         UNUserNotificationCenter.current().add(request) { error in
             if let error = error {
                 print("Error scheduling emergency notification: \(error)")
             }
         }
     }
-    
+
     func scheduleEvacuationAlert(zone: String, urgency: String) {
         let content = UNMutableNotificationContent()
         content.title = "🚨 EVACUATION ALERT"
@@ -81,13 +76,13 @@ class NotificationService: NSObject, ObservableObject, UNUserNotificationCenterD
         content.categoryIdentifier = "EVACUATION_ALERT"
         content.userInfo = ["zone": zone, "urgency": urgency]
         content.interruptionLevel = .critical
-        
+
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
         let request = UNNotificationRequest(identifier: "evacuation_\(Date().timeIntervalSince1970)", content: content, trigger: trigger)
-        
+
         UNUserNotificationCenter.current().add(request)
     }
-    
+
     func scheduleFireUpdate(containment: Int, location: String) {
         let content = UNMutableNotificationContent()
         content.title = "🔥 Fire Update"
@@ -95,13 +90,13 @@ class NotificationService: NSObject, ObservableObject, UNUserNotificationCenterD
         content.sound = .default
         content.categoryIdentifier = "FIRE_UPDATE"
         content.userInfo = ["containment": containment, "location": location]
-        
+
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
         let request = UNNotificationRequest(identifier: "fire_update_\(Date().timeIntervalSince1970)", content: content, trigger: trigger)
-        
+
         UNUserNotificationCenter.current().add(request)
     }
-    
+
     func scheduleCommunityPost(postType: String, author: String, content: String) {
         let content = UNMutableNotificationContent()
         content.title = "📢 Community Update"
@@ -109,13 +104,13 @@ class NotificationService: NSObject, ObservableObject, UNUserNotificationCenterD
         content.sound = .default
         content.categoryIdentifier = "COMMUNITY_POST"
         content.userInfo = ["postType": postType, "author": author]
-        
+
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
         let request = UNNotificationRequest(identifier: "community_post_\(Date().timeIntervalSince1970)", content: content, trigger: trigger)
-        
+
         UNUserNotificationCenter.current().add(request)
     }
-    
+
     func scheduleWeatherAlert(alertType: String, description: String) {
         let content = UNMutableNotificationContent()
         content.title = "🌤️ Weather Alert"
@@ -123,29 +118,26 @@ class NotificationService: NSObject, ObservableObject, UNUserNotificationCenterD
         content.sound = .default
         content.categoryIdentifier = "WEATHER_ALERT"
         content.userInfo = ["alertType": alertType, "description": description]
-        
+
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
         let request = UNNotificationRequest(identifier: "weather_alert_\(Date().timeIntervalSince1970)", content: content, trigger: trigger)
-        
+
         UNUserNotificationCenter.current().add(request)
     }
-    
-    // MARK: - Scheduled Notifications
-    
+
     func schedulePeriodicFireCheck() {
         let content = UNMutableNotificationContent()
         content.title = "🔥 Fire Status Check"
         content.body = "Tap to check current fire conditions in your area"
         content.sound = .default
         content.categoryIdentifier = "PERIODIC_CHECK"
-        
-        // Schedule for every 4 hours
+
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 4 * 60 * 60, repeats: true)
         let request = UNNotificationRequest(identifier: "periodic_fire_check", content: content, trigger: trigger)
-        
+
         UNUserNotificationCenter.current().add(request)
     }
-    
+
     func scheduleAirQualityAlert(aqi: Int) {
         let content = UNMutableNotificationContent()
         content.title = "😷 Air Quality Alert"
@@ -153,15 +145,13 @@ class NotificationService: NSObject, ObservableObject, UNUserNotificationCenterD
         content.sound = .default
         content.categoryIdentifier = "AIR_QUALITY"
         content.userInfo = ["aqi": aqi]
-        
+
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
         let request = UNNotificationRequest(identifier: "air_quality_\(Date().timeIntervalSince1970)", content: content, trigger: trigger)
-        
+
         UNUserNotificationCenter.current().add(request)
     }
-    
-    // MARK: - Notification Categories
-    
+
     func setupNotificationCategories() {
         let emergencyCategory = UNNotificationCategory(
             identifier: "EMERGENCY_ALERT",
@@ -172,7 +162,7 @@ class NotificationService: NSObject, ObservableObject, UNUserNotificationCenterD
             intentIdentifiers: [],
             options: .customDismissAction
         )
-        
+
         let evacuationCategory = UNNotificationCategory(
             identifier: "EVACUATION_ALERT",
             actions: [
@@ -182,7 +172,7 @@ class NotificationService: NSObject, ObservableObject, UNUserNotificationCenterD
             intentIdentifiers: [],
             options: .customDismissAction
         )
-        
+
         let communityCategory = UNNotificationCategory(
             identifier: "COMMUNITY_POST",
             actions: [
@@ -192,58 +182,54 @@ class NotificationService: NSObject, ObservableObject, UNUserNotificationCenterD
             intentIdentifiers: [],
             options: .customDismissAction
         )
-        
+
         UNUserNotificationCenter.current().setNotificationCategories([
             emergencyCategory,
             evacuationCategory,
             communityCategory
         ])
     }
-    
-    // MARK: - UNUserNotificationCenterDelegate
-    
+
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
-        // Show notification even when app is in foreground
+
         completionHandler([.banner, .sound, .badge])
     }
-    
+
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
         let userInfo = response.notification.request.content.userInfo
-        
+
         switch response.actionIdentifier {
         case "VIEW_MAP":
-            // Navigate to map
+
             NotificationCenter.default.post(name: .navigateToMap, object: nil)
         case "CALL_911":
-            // Make emergency call
+
             if let url = URL(string: "tel:911") {
                 UIApplication.shared.open(url)
             }
         case "VIEW_ROUTES":
-            // Navigate to evacuation routes
+
             NotificationCenter.default.post(name: .navigateToEvacuation, object: nil)
         case "SHELTER_INFO":
-            // Navigate to shelter information
+
             NotificationCenter.default.post(name: .navigateToShelters, object: nil)
         case "VIEW_POST":
-            // Navigate to community threads
+
             NotificationCenter.default.post(name: .navigateToCommunity, object: nil)
         case "REPLY":
-            // Navigate to community threads with reply intent
+
             NotificationCenter.default.post(name: .navigateToCommunity, object: userInfo)
         default:
             break
         }
-        
+
         completionHandler()
     }
 }
-
-// MARK: - Notification Names
 
 extension Notification.Name {
     static let navigateToMap = Notification.Name("navigateToMap")
     static let navigateToEvacuation = Notification.Name("navigateToEvacuation")
     static let navigateToShelters = Notification.Name("navigateToShelters")
     static let navigateToCommunity = Notification.Name("navigateToCommunity")
-} 
+}

@@ -1,73 +1,62 @@
-//
-//  IgnisApp.swift
-//  Ignis
-//
-//  Created by Areen Jain on 7/20/25.
-//
-
 import SwiftUI
 import SwiftData
 import UserNotifications
 
-// MARK: - Main Navigation View - Optimized for Performance
 struct MainNavigationView: View {
-    @State private var selectedTab = 2 // Home is selected by default
-    @State private var showLandingPage = true // Start with landing page
+    @State private var selectedTab = 2
+    @State private var showLandingPage = true
     @State private var showSideMenu = false
     @State private var showBottomNavBar = true
-    
+
     var body: some View {
         if showLandingPage {
-                // Landing page without navigation bar
+
                 LandingPageView(onStartNow: {
-                    withAnimation(.easeInOut(duration: 0.3)) { // Reduced animation duration
+                    withAnimation(.easeInOut(duration: 0.3)) {
                         showLandingPage = false
                     }
                 })
             } else {
-                // Main app with navigation bar
+
                 ZStack {
-                    // Background - Pure black
+
                     Color.black
                         .ignoresSafeArea(.all)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    
-                    // Content based on selected tab
+
                     Group {
                         switch selectedTab {
-                        case 0: // Chat
+                        case 0:
                             WildfireChatbotView()
-                        case 1: // Mental Health
+                        case 1:
                             MentalHelpView()
-                        case 2: // Home
+                        case 2:
                             HomePageView()
-                        case 3: // Education (accessible via Learn button)
+                        case 3:
                             EducationView()
-                        case 4: // Wildfire Map
+                        case 4:
                             WildfireMap()
-                        case 5: // Community
+                        case 5:
                             CommunityThreadsView()
-                        case 6: // Resources
+                        case 6:
                             ResourcesView()
-                        case 7: // Legislative
+                        case 7:
                             LegislativeView()
-                        case 8: // Fire Risk
+                        case 8:
                             FireRiskView()
                         default:
                             HomePageView()
                         }
                     }
                     .animation(.easeInOut(duration: 0.2), value: selectedTab)
-                    
-                    // Custom Floating Navigation Bar
+
                     if showBottomNavBar {
                         VStack {
                             Spacer()
                             CustomFloatingNavBar(selectedTab: $selectedTab)
                         }
                     }
-                    
-                    // Side Menu Overlay
+
                     if showSideMenu {
                         SideMenuView(
                             showSideMenu: $showSideMenu,
@@ -80,7 +69,7 @@ struct MainNavigationView: View {
                 .navigationBarHidden(true)
                 .navigationViewStyle(StackNavigationViewStyle())
                 .onAppear {
-                    // Additional system UI hiding
+
                     hideSystemTabBar()
                 }
                 .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("NavigateToTab"))) { notification in
@@ -102,38 +91,33 @@ struct MainNavigationView: View {
                 }
             }
     }
-    
-    // Helper function to hide system tab bar
+
     private func hideSystemTabBar() {
         DispatchQueue.main.async {
-            // Find the current window scene and hide tab bar
+
             if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
                let window = windowScene.windows.first,
                let tabBarController = window.rootViewController as? UITabBarController {
                 tabBarController.tabBar.isHidden = true
                 tabBarController.tabBar.alpha = 0
             }
-            
-            // Alternative approach using UITabBar appearance
+
             UITabBar.appearance().isHidden = true
             UITabBar.appearance().alpha = 0
         }
     }
-    
-    // Helper function to configure status bar appearance
+
     private func configureStatusBarAppearance() {
         DispatchQueue.main.async {
-            // Status bar configuration is now handled through preferredColorScheme(.dark)
-            // and the individual view controllers
+
         }
     }
 }
 
-// MARK: - Side Menu View
 struct SideMenuView: View {
     @Binding var showSideMenu: Bool
     @Binding var selectedTab: Int
-    
+
     let menuItems = [
         ("Home", "house.fill", 2),
         ("Chatbot", "message.fill", 0),
@@ -144,10 +128,10 @@ struct SideMenuView: View {
         ("Legislative", "building.columns.fill", 7),
         ("Fire Risk", "flame.fill", 8)
     ]
-    
+
     var body: some View {
         ZStack {
-            // Background overlay
+
             Color.black.opacity(0.5)
                 .ignoresSafeArea()
                 .onTapGesture {
@@ -155,17 +139,16 @@ struct SideMenuView: View {
                         showSideMenu = false
                     }
                 }
-            
-            // Menu content
+
             HStack {
                 VStack(alignment: .leading, spacing: 0) {
-                    // Header
+
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Ignis")
                             .font(.title)
                             .fontWeight(.bold)
                             .foregroundColor(.wsOrange)
-                        
+
                         Text("Wildfire Safety")
                             .font(.subheadline)
                             .foregroundColor(.gray)
@@ -173,8 +156,7 @@ struct SideMenuView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 60)
                     .padding(.bottom, 30)
-                    
-                    // Menu items
+
                     VStack(spacing: 0) {
                         ForEach(menuItems, id: \.0) { item in
                             MenuItemView(
@@ -192,7 +174,7 @@ struct SideMenuView: View {
                             )
                         }
                     }
-                    
+
                     Spacer()
                 }
                 .frame(width: 280)
@@ -205,20 +187,19 @@ struct SideMenuView: View {
                         .foregroundColor(.wsOrange.opacity(0.3)),
                     alignment: .trailing
                 )
-                
+
                 Spacer()
             }
         }
     }
 }
 
-// MARK: - Menu Item View
 struct MenuItemView: View {
     let title: String
     let icon: String
     let isSelected: Bool
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             HStack(spacing: 16) {
@@ -226,14 +207,14 @@ struct MenuItemView: View {
                     .font(.title3)
                     .foregroundColor(isSelected ? .wsOrange : .gray)
                     .frame(width: 24)
-                
+
                 Text(title)
                     .font(.body)
                     .fontWeight(isSelected ? .semibold : .regular)
                     .foregroundColor(isSelected ? .wsOrange : .white)
-                
+
                 Spacer()
-                
+
                 if isSelected {
                     Circle()
                         .fill(Color.wsOrange)
@@ -251,53 +232,49 @@ struct MenuItemView: View {
     }
 }
 
-// MARK: - Lazy View for Performance
 struct LazyView<Content: View>: View {
     let build: () -> Content
-    
+
     init(_ build: @escaping () -> Content) {
         self.build = build
     }
-    
+
     var body: Content {
         build()
     }
 }
 
-// MARK: - Custom Floating Navigation Bar - Optimized
 struct CustomFloatingNavBar: View {
     @Binding var selectedTab: Int
     @State private var isPressed = false
-    
+
     var body: some View {
         HStack(spacing: 0) {
-            // Chatbot Button (Left)
+
             NavBarButton(
                 icon: "message.fill",
                 title: "Chatbot",
                 isSelected: selectedTab == 0,
                 action: { selectedTab = 0 }
             )
-            
+
             Spacer()
-            
-            // Map Button
+
             NavBarButton(
                 icon: "map.fill",
                 title: "Map",
                 isSelected: selectedTab == 4,
                 action: { selectedTab = 4 }
             )
-            
+
             Spacer()
-            
-            // Home Button (Center)
+
             Button {
-                withAnimation(.spring(response: 0.2, dampingFraction: 0.6)) { // Reduced animation duration
+                withAnimation(.spring(response: 0.2, dampingFraction: 0.6)) {
                     selectedTab = 2
                     isPressed = true
                 }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { // Reduced delay
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                     isPressed = false
                 }
             } label: {
@@ -308,26 +285,25 @@ struct CustomFloatingNavBar: View {
                         .shadow(color: .wsOrange.opacity(0.4), radius: 6, x: 0, y: 3)
                         .scaleEffect(isPressed ? 0.9 : 1.0)
                         .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isPressed)
-                    
+
                     Image(systemName: "house.fill")
                         .font(.title3)
                         .foregroundColor(.white)
                 }
             }
             .accessibilityLabel("Home")
-            
+
             Spacer()
-            // Mental Health Button
+
             NavBarButton(
                 icon: "heart.fill",
                 title: "Support",
                 isSelected: selectedTab == 1,
                 action: { selectedTab = 1 }
             )
-            
+
             Spacer()
-            
-            // Fire Risk Button
+
             NavBarButton(
                 icon: "flame.fill",
                 title: "Risk",
@@ -358,21 +334,20 @@ struct CustomFloatingNavBar: View {
     }
 }
 
-// MARK: - Optimized Nav Bar Button
 struct NavBarButton: View {
     let icon: String
     let title: String
     let isSelected: Bool
     let action: () -> Void
     @State private var isPressed = false
-    
+
     var body: some View {
         Button(action: {
-            withAnimation(.spring(response: 0.2, dampingFraction: 0.6)) { // Reduced animation duration
+            withAnimation(.spring(response: 0.2, dampingFraction: 0.6)) {
                 action()
                 isPressed = true
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { // Reduced delay
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                 isPressed = false
             }
         }) {
@@ -382,7 +357,7 @@ struct NavBarButton: View {
                     .foregroundColor(isSelected ? .wsOrange : .white.opacity(0.8))
                     .scaleEffect(isPressed ? 0.8 : 1.0)
                     .animation(.spring(response: 0.2, dampingFraction: 0.6), value: isPressed)
-                
+
                 Text(title)
                     .font(.caption2)
                     .foregroundColor(isSelected ? .wsOrange : .white.opacity(0.8))
@@ -397,34 +372,30 @@ struct NavBarButton: View {
 @main
 struct IgnisApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
-    
+
     init() {
-        // Initialize notification service
+
         NotificationService.shared.setupNotificationCategories()
     }
-    
+
     var body: some Scene {
         WindowGroup {
             MainNavigationView()
-                .preferredColorScheme(.dark) // Force dark mode
+                .preferredColorScheme(.dark)
                 .onAppear {
-                    // Status bar configuration is handled through preferredColorScheme(.dark)
+
                 }
         }
     }
 }
 
-// MARK: - Optimized App Delegate
 class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
-        
-        // Configure system UI appearance
+
         configureSystemAppearance()
-        
-        // Set up notification delegate
+
         UNUserNotificationCenter.current().delegate = self
-        
-        // Request notification authorization
+
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound, .criticalAlert]) { granted, error in
             if granted {
                 DispatchQueue.main.async {
@@ -432,34 +403,28 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
                 }
             }
         }
-        
+
         return true
     }
-    
-    // Handle remote notification registration
+
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
         let tokenParts = deviceToken.map { data in String(format: "%02.2hhx", data) }
         let token = tokenParts.joined()
         print("Device Token: \(token)")
-        
-        // Here you would send the token to your server for remote notifications
-        // For now, we'll just print it
+
     }
-    
+
     func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
         print("Failed to register for remote notifications: \(error)")
     }
-    
-    // Handle remote notifications when app is in background
+
     func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable : Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
-        
-        // Handle the remote notification
+
         if let aps = userInfo["aps"] as? [String: Any] {
             if let alert = aps["alert"] as? [String: Any] {
                 let title = alert["title"] as? String ?? "Wildfire Alert"
                 let body = alert["body"] as? String ?? "Emergency notification"
-                
-                // Schedule a local notification to show the content
+
                 NotificationService.shared.scheduleEmergencyAlert(
                     title: title,
                     body: body,
@@ -467,20 +432,17 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
                 )
             }
         }
-        
+
         completionHandler(.newData)
     }
-    
-    // Handle notification when app is in foreground
+
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
         completionHandler([.banner, .sound, .badge])
     }
-    
-    // Handle notification tap
+
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
-        _ = response.notification.request.content.userInfo // silences unused warning
-        
-        // Handle different notification types
+        _ = response.notification.request.content.userInfo
+
         switch response.notification.request.content.categoryIdentifier {
         case "EMERGENCY_ALERT":
             NotificationCenter.default.post(name: .navigateToMap, object: nil)
@@ -491,37 +453,32 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         default:
             break
         }
-        
+
         completionHandler()
     }
-    
-    // MARK: - System UI Configuration
+
     private func configureSystemAppearance() {
-        // Configure navigation bar appearance
+
         let navigationBarAppearance = UINavigationBarAppearance()
         navigationBarAppearance.configureWithTransparentBackground()
         navigationBarAppearance.backgroundColor = .clear
         navigationBarAppearance.shadowColor = .clear
-        
+
         UINavigationBar.appearance().standardAppearance = navigationBarAppearance
         UINavigationBar.appearance().compactAppearance = navigationBarAppearance
         UINavigationBar.appearance().scrollEdgeAppearance = navigationBarAppearance
-        
-        // Configure tab bar appearance to be completely hidden
+
         let tabBarAppearance = UITabBarAppearance()
         tabBarAppearance.configureWithTransparentBackground()
         tabBarAppearance.backgroundColor = .clear
         tabBarAppearance.shadowColor = .clear
-        
+
         UITabBar.appearance().standardAppearance = tabBarAppearance
         UITabBar.appearance().scrollEdgeAppearance = tabBarAppearance
-        
-        // Hide tab bar completely
+
         UITabBar.appearance().isHidden = true
         UITabBar.appearance().alpha = 0.0
         UITabBar.appearance().frame = CGRect.zero
-        
-        // Configure status bar appearance (handled through view controllers now)
-        // UIApplication.shared.statusBarStyle is deprecated - handled in view controllers
+
     }
 }

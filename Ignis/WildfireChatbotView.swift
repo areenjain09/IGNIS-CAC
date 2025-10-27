@@ -15,17 +15,13 @@ struct WildfireChatbotView: View {
     @State private var scrollToBottom = false
     @State private var navigateToHome = false
     @State private var titleGlow = false
-    
-    // Using unified app theme colors
-    
-    // MARK: - Enhanced Background View
+
     private var backgroundView: some View {
         ZStack {
-            // Base gradient background
+
             Color.appGradientBackground
                 .ignoresSafeArea()
-            
-            // Subtle floating particles for visual interest
+
             GeometryReader { geometry in
                 ForEach(0..<8, id: \.self) { index in
                     Circle()
@@ -51,40 +47,34 @@ struct WildfireChatbotView: View {
             .opacity(0.6)
         }
     }
-    
 
-    
     var body: some View {
         ZStack {
-            // Enhanced background with subtle patterns
+
             backgroundView
-            
+
             VStack(spacing: 0) {
-                // Header with beautiful yellow gradient
+
                 headerView
-                
-                // Chat messages
+
                 ScrollViewReader { proxy in
                     ScrollView {
                         LazyVStack(spacing: 16) {
-                            // Welcome message with enhanced visuals
+
                             if messages.isEmpty {
                                 welcomeMessage
                             }
-                            
-                            // Chat messages
+
                             ForEach(messages) { message in
                                 MessageBubble(message: message)
                                     .id(message.id)
                             }
-                            
-                            // Typing indicator
+
                             if isTyping {
                                 TypingIndicator()
                                     .id("typing")
                             }
-                            
-                            // Invisible spacer for auto-scroll
+
                             Color.clear
                                 .frame(height: 1)
                                 .id("bottom")
@@ -105,26 +95,24 @@ struct WildfireChatbotView: View {
                         }
                     }
                 }
-                
+
                 Spacer()
-                
-                // Input area
+
                 inputArea
             }
         }
         .navigationBarHidden(true)
         .ignoresSafeArea(.container, edges: .bottom)
         .onAppear {
-            // Hide the bottom navigation bar when this view appears
+
             NotificationCenter.default.post(name: NSNotification.Name("HideBottomNavBar"), object: nil)
-            
-            // Start title animation
+
             withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
                 titleGlow = true
             }
         }
         .onDisappear {
-            // Show the bottom navigation bar when this view disappears
+
             NotificationCenter.default.post(name: NSNotification.Name("ShowBottomNavBar"), object: nil)
         }
         .alert("API Error", isPresented: .constant(deepSeekService.errorMessage != nil)) {
@@ -136,7 +124,7 @@ struct WildfireChatbotView: View {
         }
         .onChange(of: navigateToHome) { _, newValue in
             if newValue {
-                // Navigate to home tab
+
                 NotificationCenter.default.post(
                     name: NSNotification.Name("NavigateToTab"),
                     object: nil,
@@ -146,10 +134,10 @@ struct WildfireChatbotView: View {
             }
         }
     }
-    
+
     private var headerView: some View {
         VStack(spacing: 0) {
-            // Main header with beautiful yellow gradient background
+
             HStack {
                 Button(action: {
                     navigateToHome = true
@@ -163,20 +151,18 @@ struct WildfireChatbotView: View {
                                 .fill(Color.appSurface)
                         )
                 }
-                
+
                 Spacer()
-                
-                // Centered title with enhanced styling and animations
+
                 Text("Fire Expert")
                     .font(.appTitle)
                     .foregroundColor(.appTextPrimary)
                     .shadow(color: Color.appPrimary.opacity(0.3), radius: 4, x: 0, y: 2)
                     .scaleEffect(titleGlow ? 1.05 : 1.0)
                     .animation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true), value: titleGlow)
-                
+
                 Spacer()
-                
-                // Clear chat button
+
                 Button(action: {
                     clearChat()
                 }) {
@@ -196,8 +182,7 @@ struct WildfireChatbotView: View {
             .padding(.top, 12)
             .padding(.bottom, 16)
             .background(Color.appSurface)
-            
-            // Subtle shadow for depth
+
             Rectangle()
                 .fill(
                     LinearGradient(
@@ -212,14 +197,13 @@ struct WildfireChatbotView: View {
                 .frame(height: 4)
         }
     }
-    
+
     private var welcomeMessage: some View {
         VStack(spacing: 32) {
             Spacer()
-            
-            // Enhanced welcome content
+
             VStack(spacing: 24) {
-                // Animated icon with glow effect
+
                 ZStack {
                     Circle()
                         .fill(
@@ -237,7 +221,7 @@ struct WildfireChatbotView: View {
                         .frame(width: 120, height: 120)
                         .scaleEffect(titleGlow ? 1.1 : 1.0)
                         .opacity(titleGlow ? 0.8 : 0.6)
-                    
+
                     Image(systemName: "flame.fill")
                         .font(.system(size: 48, weight: .semibold))
                         .foregroundStyle(
@@ -249,48 +233,46 @@ struct WildfireChatbotView: View {
                         )
                         .shadow(color: Color.appPrimary.opacity(0.4), radius: 8, x: 0, y: 4)
                 }
-                
-                // Welcome text with subtle animation
+
                 VStack(spacing: 8) {
                     Text("Ask me anything about")
                         .font(.appSubheadline)
                         .foregroundColor(.appTextSecondary)
-                    
+
                     Text("Wildfire Safety")
                         .font(.system(size: 20, weight: .semibold, design: .rounded))
                         .foregroundColor(.appTextPrimary)
                         .shadow(color: Color.appPrimary.opacity(0.2), radius: 4, x: 0, y: 2)
                 }
             }
-            
-            // Quick action buttons with enhanced styling
+
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 16) {
                 EnhancedQuickActionButton(title: "Evacuation", icon: "exclamationmark.triangle.fill", color: .appError) {
                     sendMessage("What should I do during evacuation?")
                 }
-                
+
                 EnhancedQuickActionButton(title: "Air Quality", icon: "lungs.fill", color: .appInfo) {
                     sendMessage("How does wildfire smoke affect air quality?")
                 }
-                
+
                 EnhancedQuickActionButton(title: "Emergency Kit", icon: "cross.case.fill", color: .appWarning) {
                     sendMessage("What should I pack in my emergency kit?")
                 }
-                
+
                 EnhancedQuickActionButton(title: "Fire Safety", icon: "shield.fill", color: .appSuccess) {
                     sendMessage("How can I protect my home from wildfires?")
                 }
             }
-            
+
             Spacer()
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 24)
     }
-    
+
     private var inputArea: some View {
         VStack(spacing: 0) {
-            // Enhanced gradient divider
+
             Rectangle()
                 .fill(
                     LinearGradient(
@@ -304,11 +286,11 @@ struct WildfireChatbotView: View {
                     )
                 )
                 .frame(height: 2)
-            
+
             HStack(spacing: 12) {
-                // Enhanced text input with glow effect
+
                 HStack(spacing: 12) {
-                    // Input field with subtle animation
+
                     TextField("Ask about fire safety...", text: $newMessage)
                         .padding(.horizontal, 20)
                         .padding(.vertical, 20)
@@ -331,15 +313,14 @@ struct WildfireChatbotView: View {
                         )
                         .foregroundColor(.appTextPrimary)
                         .animation(.easeInOut(duration: 0.2), value: newMessage.isEmpty)
-                    
-                    // Enhanced send button with better animation
+
                     Button(action: {
                         sendMessage(newMessage)
                     }) {
                         ZStack {
                             Circle()
                                 .fill(
-                                    newMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty 
+                                    newMessage.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                                     ? AnyShapeStyle(Color.appButtonSecondary)
                                     : AnyShapeStyle(LinearGradient(
                                         colors: [Color.appPrimary, Color.appSecondary],
@@ -354,7 +335,7 @@ struct WildfireChatbotView: View {
                                     x: 0,
                                     y: 2
                                 )
-                            
+
                             Image(systemName: "arrow.up")
                                 .font(.system(size: 18, weight: .semibold))
                                 .foregroundColor(.white)
@@ -370,7 +351,7 @@ struct WildfireChatbotView: View {
             .padding(.vertical, 16)
             .padding(.bottom, 22)
             .background(
-                // Enhanced background with subtle gradient
+
                 LinearGradient(
                     colors: [
                         Color.appSurface,
@@ -384,22 +365,19 @@ struct WildfireChatbotView: View {
             .ignoresSafeArea(.container, edges: .bottom)
         }
     }
-    
+
     private func sendMessage(_ customMessage: String? = nil) {
         let messageText = customMessage ?? newMessage.trimmingCharacters(in: .whitespacesAndNewlines)
-        
+
         guard !messageText.isEmpty else { return }
-        
-        // Add user message
+
         let userMessage = ChatMessage(content: messageText, isUser: true, timestamp: Date())
         withAnimation(.easeInOut(duration: 0.3)) {
             messages.append(userMessage)
         }
-        
-        // Clear input immediately
+
         newMessage = ""
-        
-        // Generate AI response
+
         isTyping = true
         Task {
             let botResponse = await deepSeekService.generateFireExpertResponse(for: messageText)
@@ -412,13 +390,13 @@ struct WildfireChatbotView: View {
             }
         }
     }
-    
+
     private func clearChat() {
         withAnimation(.easeInOut(duration: 0.3)) {
             messages.removeAll()
         }
     }
-    
+
     private func scrollToBottom(_ proxy: ScrollViewProxy) {
         withAnimation(.easeInOut(duration: 0.3)) {
             proxy.scrollTo(messages.last?.id, anchor: .bottom)
@@ -428,12 +406,12 @@ struct WildfireChatbotView: View {
 
 struct MessageBubble: View {
     let message: ChatMessage
-    
+
     var body: some View {
         HStack {
             if message.isUser {
                 Spacer()
-                
+
                 VStack(alignment: .trailing, spacing: 4) {
                     Text(message.content)
                         .font(.appBody)
@@ -442,7 +420,7 @@ struct MessageBubble: View {
                         .padding(.vertical, 12)
                         .background(Color.appPrimary)
                         .cornerRadius(18)
-                    
+
                     Text(timeString(from: message.timestamp))
                         .font(.appSmall)
                         .foregroundColor(.appTextTertiary)
@@ -450,11 +428,11 @@ struct MessageBubble: View {
             } else {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(alignment: .top, spacing: 8) {
-                        // Bot avatar
+
                         Image(systemName: "flame.circle.fill")
                             .font(.title3)
                             .foregroundColor(.appSecondary)
-                        
+
                         Text(message.content)
                             .font(.appBody)
                             .foregroundColor(.appTextPrimary)
@@ -463,18 +441,18 @@ struct MessageBubble: View {
                             .background(Color.appCard)
                             .cornerRadius(18)
                     }
-                    
+
                     Text(timeString(from: message.timestamp))
                         .font(.appSmall)
                         .foregroundColor(.appTextTertiary)
                         .padding(.leading, 32)
                 }
-                
+
                 Spacer()
             }
         }
     }
-    
+
     private func timeString(from date: Date) -> String {
         let formatter = DateFormatter()
         formatter.timeStyle = .short
@@ -484,7 +462,7 @@ struct MessageBubble: View {
 
 struct TypingIndicator: View {
     @State private var animationOffset: CGFloat = 0
-    
+
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
@@ -492,7 +470,7 @@ struct TypingIndicator: View {
                     Image(systemName: "flame.circle.fill")
                         .font(.title3)
                         .foregroundColor(.appSecondary)
-                    
+
                     HStack(spacing: 4) {
                         ForEach(0..<3) { index in
                             Circle()
@@ -507,7 +485,7 @@ struct TypingIndicator: View {
                     .cornerRadius(18)
                 }
             }
-            
+
             Spacer()
         }
         .onAppear {
@@ -518,20 +496,19 @@ struct TypingIndicator: View {
     }
 }
 
-// MARK: - Enhanced Quick Action Button
 struct EnhancedQuickActionButton: View {
     let title: String
     let icon: String
     let color: Color
     let action: () -> Void
     @State private var isPressed = false
-    
+
     var body: some View {
         Button(action: {
             withAnimation(.easeInOut(duration: 0.1)) {
                 isPressed = true
             }
-            
+
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 withAnimation(.easeInOut(duration: 0.1)) {
                     isPressed = false
@@ -540,20 +517,19 @@ struct EnhancedQuickActionButton: View {
             }
         }) {
             VStack(spacing: 12) {
-                // Enhanced icon with glow effect
+
                 ZStack {
                     Circle()
                         .fill(color.opacity(0.15))
                         .frame(width: 48, height: 48)
                         .shadow(color: color.opacity(0.3), radius: isPressed ? 2 : 8, x: 0, y: isPressed ? 1 : 4)
-                    
+
                     Image(systemName: icon)
                         .font(.system(size: 20, weight: .semibold))
                         .foregroundColor(color)
                 }
                 .scaleEffect(isPressed ? 0.95 : 1.0)
-                
-                // Enhanced title
+
                 Text(title)
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.appTextPrimary)
@@ -587,14 +563,14 @@ struct QuickActionButton: View {
     let title: String
     let icon: String
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             VStack(spacing: 8) {
                 Image(systemName: icon)
                     .font(.title2)
                     .foregroundColor(.appPrimary)
-                
+
                 Text(title)
                     .font(.appCaption)
                     .foregroundColor(.appTextPrimary)
@@ -606,7 +582,6 @@ struct QuickActionButton: View {
     }
 }
 
-// Extension for rounded corners
 extension View {
     func cornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
         clipShape(RoundedCorner(radius: radius, corners: corners))
@@ -629,4 +604,4 @@ struct RoundedCorner: Shape {
 
 #Preview {
     WildfireChatbotView()
-} 
+}

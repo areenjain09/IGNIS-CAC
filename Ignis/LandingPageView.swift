@@ -1,50 +1,34 @@
-//
-//  LandingPageView.swift
-//  Ignis
-//
-//  Created by Areen Jain on 7/20/25.
-//
 import SwiftUI
-// MARK: - Notification Names
+
 extension Notification.Name {
     static let enterIgnis = Notification.Name("enterIgnis")
 }
-/// Landing page view for Ignis application
-/// Features real-time statistics and interactive elements
+
 struct LandingPageView: View {
-    // MARK: - State Properties
-    
+
     @State private var hoveredCard: StatCardType? = nil
     @State private var ashParticles: [AshParticle] = []
     @State private var burningAshParticles: [BurningAshParticle] = []
     @State private var hoveredPanel: Int? = nil
     @State private var isButtonHovered = false
     @State private var buttonGlowIntensity: Double = 0.0
-    
-    // MARK: - Callback
+
     let onStartNow: () -> Void
-    
-    // MARK: - Data Service
+
     @StateObject private var fireDataService = FireDataService.shared
-    
-    // MARK: - Timer for real-time updates (removed - now using FireDataService)
-    
-    // MARK: - Body
-    
+
     var body: some View {
         ZStack {
-            // Realistic fire/ash background
+
             fireAshBackground
-            
+
             ScrollView {
                 VStack(spacing: 40) {
-                    // Image panels section
+
                     imagePanelsSection
-                    
-                    // Title and CTA section
+
                     titleAndCTASection
-                    
-                    // Statistics section
+
                     statisticsSection
                 }
                 .padding(.horizontal, 20)
@@ -59,17 +43,13 @@ struct LandingPageView: View {
             fireDataService.start()
         }
     }
-    
-    // MARK: - Background
-    
-    /// Realistic fire/ash background with animated particles
+
     private var fireAshBackground: some View {
         ZStack {
-            // Base background - Unified app theme
+
             Color.appBackground
                 .ignoresSafeArea()
-            
-            // Animated ash particles (falling)
+
             ForEach(ashParticles) { particle in
                 Circle()
                     .fill(
@@ -91,8 +71,7 @@ struct LandingPageView: View {
                         value: particle.position
                     )
             }
-            
-            // Burning ash particles (rising)
+
             ForEach(burningAshParticles) { particle in
                 Circle()
                     .fill(
@@ -115,8 +94,7 @@ struct LandingPageView: View {
                         value: particle.position
                     )
             }
-            
-            // Fire glow effect
+
             RadialGradient(
                 colors: [
                     Color.orange.opacity(0.15),
@@ -130,10 +108,7 @@ struct LandingPageView: View {
             .ignoresSafeArea()
         }
     }
-    
-    // MARK: - Subviews
-    
-    /// Image panels section with 3 static panels
+
     private var imagePanelsSection: some View {
         HStack(spacing: 10) {
             ForEach(0..<3) { index in
@@ -144,26 +119,25 @@ struct LandingPageView: View {
         .frame(height: 160)
         .padding(.horizontal, 20)
     }
-    
-    /// Individual image panel
+
     private func imagePanel(for index: Int) -> some View {
         Group {
             if index == 0 {
-                // First panel: Fire image
+
                 Image("fire_panel")
                     .resizable()
                     .aspectRatio(contentMode: .fill)
                     .frame(maxWidth: 115, maxHeight: .infinity)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
             } else if index == 1 {
-                // Second panel: Emergency image
+
                 Image("emergency_panel")
                     .resizable()
                     .aspectRatio(contentMode: .fill)
                     .frame(maxWidth: 132, maxHeight: .infinity)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
             } else {
-                // Third panel: Evacuation image
+
                 Image("evacuation_panel")
                     .resizable()
                     .aspectRatio(contentMode: .fill)
@@ -173,16 +147,14 @@ struct LandingPageView: View {
         }
         .shadow(color: .appPrimary.opacity(0.4), radius: 15, x: 0, y: 8)
     }
-    
-    
-    /// Title and call-to-action section
+
     private var titleAndCTASection: some View {
         VStack(spacing: 24) {
-            // Ignis title with fire icon and burning effect
+
             VStack(spacing: 12) {
                 HStack(spacing: 8) {
                     ZStack {
-                        // Fire icon
+
                         Image(systemName: "flame.fill")
                             .font(.system(size: 64, weight: .bold))
                             .foregroundStyle(
@@ -193,8 +165,7 @@ struct LandingPageView: View {
                                 )
                             )
                             .shadow(color: .appPrimary.opacity(0.6), radius: 10, x: 0, y: 5)
-                        
-                        // Burning ash particles above the fire
+
                         ForEach(0..<8) { i in
                             Circle()
                                 .fill(
@@ -221,7 +192,7 @@ struct LandingPageView: View {
                                 )
                         }
                     }
-                    
+
                     Text("IGNIS")
                         .font(.system(size: 64, weight: .bold, design: .rounded))
                         .foregroundStyle(
@@ -232,8 +203,7 @@ struct LandingPageView: View {
                         )
                         )
                 }
-                
-                // Mission statement
+
                 Text("Protecting lives from wildfire threats - in real time")
                     .font(.system(size: 14, weight: .medium, design: .default))
                     .italic()
@@ -247,8 +217,7 @@ struct LandingPageView: View {
                     .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
             }
             .shadow(color: .appPrimary.opacity(0.6), radius: 15, x: 0, y: 8)
-            
-            // Start Now button
+
             Button(action: { onStartNow() }) {
                 Text("START NOW")
                     .font(.system(size: 18, weight: .bold, design: .rounded))
@@ -297,8 +266,7 @@ struct LandingPageView: View {
             }
         }
     }
-    
-    /// Statistics section with 2x2 grid
+
     private var statisticsSection: some View {
         LazyVGrid(columns: [
             GridItem(.flexible()),
@@ -313,11 +281,11 @@ struct LandingPageView: View {
                 isHovered: false,
                 isLoading: fireDataService.isLoading || fireDataService.nasaFireStatistics == nil
             ) {
-                // No hover action
+
             } onHoverExit: {
-                // No hover exit action
+
             }
-            
+
             StatCard(
                 type: .injuriesPrevented,
                 value: fireDataService.nasaFireStatistics?.totalFirePoints ?? 0,
@@ -327,11 +295,11 @@ struct LandingPageView: View {
                 isHovered: false,
                 isLoading: fireDataService.isLoading || fireDataService.nasaFireStatistics == nil
             ) {
-                // No hover action
+
             } onHoverExit: {
-                // No hover exit action
+
             }
-            
+
             StatCard(
                 type: .routesProvided,
                 value: fireDataService.nasaFireStatistics?.highConfidenceFiresLast24Hours ?? 0,
@@ -341,11 +309,11 @@ struct LandingPageView: View {
                 isHovered: false,
                 isLoading: fireDataService.isLoading || fireDataService.nasaFireStatistics == nil
             ) {
-                // No hover action
+
             } onHoverExit: {
-                // No hover exit action
+
             }
-            
+
             StatCard(
                 type: .homesProtected,
                 value: Int(fireDataService.nasaFireStatistics?.totalFireRadiativePower ?? 0),
@@ -355,17 +323,14 @@ struct LandingPageView: View {
                 isHovered: false,
                 isLoading: fireDataService.isLoading || fireDataService.nasaFireStatistics == nil
             ) {
-                // No hover action
+
             } onHoverExit: {
-                // No hover exit action
+
             }
         }
         .padding(.horizontal, 40)
     }
-    
-    // MARK: - Helper Methods
-    
-    /// Get image icon for panel
+
     private func imageIcon(for index: Int) -> String {
         switch index {
         case 0: return "flame.circle.fill"
@@ -374,8 +339,7 @@ struct LandingPageView: View {
         default: return "photo"
         }
     }
-    
-    /// Get image icon color for panel
+
     private func imageIconColor(for index: Int) -> LinearGradient {
         switch index {
         case 0: return LinearGradient(colors: [.orange, .red, .yellow], startPoint: .topLeading, endPoint: .bottomTrailing)
@@ -384,8 +348,7 @@ struct LandingPageView: View {
         default: return LinearGradient(colors: [.gray, .white], startPoint: .topLeading, endPoint: .bottomTrailing)
         }
     }
-    
-    /// Get image title for panel
+
     private func imageTitle(for index: Int) -> String {
         switch index {
         case 0: return "Active Fire"
@@ -394,8 +357,7 @@ struct LandingPageView: View {
         default: return "Scene"
         }
     }
-    
-    /// Get image subtitle for panel
+
     private func imageSubtitle(for index: Int) -> String {
         switch index {
         case 0: return "Live fire map &\nalert system"
@@ -404,8 +366,7 @@ struct LandingPageView: View {
         default: return "Scene description"
         }
     }
-    
-    /// Generate animated ash particles (falling)
+
     private func generateAshParticles() {
         ashParticles = (0..<50).map { _ in
             AshParticle(
@@ -418,16 +379,14 @@ struct LandingPageView: View {
                 duration: Double.random(in: 8...15)
             )
         }
-        
-        // Animate particles falling
+
         withAnimation(.linear(duration: 10).repeatForever(autoreverses: false)) {
             for i in ashParticles.indices {
                 ashParticles[i].position.y = -50
             }
         }
     }
-    
-    /// Generate burning ash particles (rising)
+
     private func generateBurningAshParticles() {
         burningAshParticles = (0..<30).map { _ in
             BurningAshParticle(
@@ -440,36 +399,31 @@ struct LandingPageView: View {
                 duration: Double.random(in: 3...8)
             )
         }
-        
-        // Animate particles rising
+
         withAnimation(.easeOut(duration: 6).repeatForever(autoreverses: false)) {
             for i in burningAshParticles.indices {
                 burningAshParticles[i].position.y = -20
             }
         }
     }
-    
-    /// Refresh fire data manually
+
     private func refreshFireData() {
-        // disabled while map/data is removed
+
     }
-    
-    /// Animate button glow on load
+
     private func animateButtonGlow() {
         withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
             buttonGlowIntensity = 1.0
         }
     }
-    
-    /// Enter Ignis action
+
     private func enterIgnis() {
-        // Post notification to navigate to main content
+
         NotificationCenter.default.post(name: .enterIgnis, object: nil)
     }
-    
-    
+
 }
-// MARK: - Ash Particle Model
+
 struct AshParticle: Identifiable {
     let id = UUID()
     var position: CGPoint
@@ -477,7 +431,7 @@ struct AshParticle: Identifiable {
     let opacity: Double
     let duration: Double
 }
-// MARK: - Burning Ash Particle Model
+
 struct BurningAshParticle: Identifiable {
     let id = UUID()
     var position: CGPoint
@@ -485,14 +439,14 @@ struct BurningAshParticle: Identifiable {
     let opacity: Double
     let duration: Double
 }
-// MARK: - Stat Card Type
+
 enum StatCardType {
     case assistedSurvivors
     case injuriesPrevented
     case routesProvided
     case homesProtected
 }
-// MARK: - Stat Card View
+
 struct StatCard: View {
     let type: StatCardType
     let value: Int
@@ -503,7 +457,7 @@ struct StatCard: View {
     let isLoading: Bool
     let onHover: () -> Void
     let onHoverExit: () -> Void
-    
+
     var body: some View {
         VStack(spacing: 12) {
             Image(systemName: icon)
@@ -516,7 +470,7 @@ struct StatCard: View {
                     )
                 )
                 .shadow(color: iconColor.opacity(0.5), radius: 4, x: 0, y: 2)
-            
+
             Group {
                 if isLoading {
                     ProgressView()
@@ -528,8 +482,8 @@ struct StatCard: View {
                         .foregroundStyle(Color.appTextPrimary)
                 }
             }
-            .frame(height: 40) // Fixed height to prevent layout jumping
-            
+            .frame(height: 40)
+
             Text(label)
                 .font(.caption)
                 .fontWeight(.medium)
@@ -577,7 +531,7 @@ struct StatCard: View {
         }
     }
 }
-// MARK: - Preview
+
 #Preview {
     LandingPageView(onStartNow: {})
 }
